@@ -8,6 +8,7 @@ import os
 import subprocess
 import shutil
 import uuid
+import copy
 
 import array as arr
 from operator import mul
@@ -23,6 +24,7 @@ import TT2lUnbinned.Tools.user as user
 from TT2lUnbinned.Tools.helpers             import closestOSDLMassToMZ, deltaR, deltaPhi, bestDRMatchInCollection, nonEmptyFile, getSortedZCandidates, cosThetaStar, m3, getMinDLMass
 from TT2lUnbinned.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGenPartsAll, getJets, genLepFromZ, getGenZs, isAnalysisJet
 from TT2lUnbinned.Tools.triggerEfficiency   import triggerEfficiency
+import TT2lUnbinned.Tools.fixTVecMul
 
 # Analysis
 from Analysis.Tools.mvaTOPreader             import mvaTOPreader
@@ -98,6 +100,11 @@ logger  = _logger.get_logger(options.logLevel, logFile = logFile)
 import RootTools.core.logger as _logger_rt
 logger_rt = _logger_rt.get_logger(options.logLevel, logFile = logFile )
 
+if options.normalizeSys:
+    # Load the data base with normalisations. For now, use Robert's hardcoded path so that you don't have to fill it; it is my user.cache_dir path.
+    from Analysis.Tools.DirDB import DirDB
+    normalizationDB = DirDB(os.path.join( "/groups/hephy/cms/robert.schoefbeck/tttt/caches", 'normalizationCache'))
+
 def fill_vector_collection( event, collection_name, collection_varnames, objects, maxN = 100):
     setattr( event, "n"+collection_name, len(objects) )
     for i_obj, obj in enumerate(objects[:maxN]):
@@ -111,7 +118,6 @@ def fill_vector_collection( event, collection_name, collection_varnames, objects
 
 # Flags
 isDilep         = options.skim.lower().count('dilep') > 0
-isTrilep        = options.skim.lower().count('trilep') > 0
 isSinglelep     = options.skim.lower().count('singlelep') > 0
 isSmall         = options.skim.lower().count('small') > 0
 isInclusive     = options.skim.lower().count('inclusive') > 0
@@ -125,20 +131,23 @@ if options.event > 0:
 
 if isDilep:
     skimConds.append( "Sum$(Electron_pt>20&&abs(Electron_eta)<2.5) + Sum$(Muon_pt>20&&abs(Muon_eta)<2.5)>=2" )
-elif isTrilep:
-    skimConds.append( "Sum$(Electron_pt>20&&abs(Electron_eta)<2.5&&(Electron_pfRelIso03_all)<0.4) + Sum$(Muon_pt>20&&abs(Muon_eta)<2.5&&Muon_pfRelIso03_all<0.4)>=2 && Sum$(Electron_pt>10&&abs(Electron_eta)<2.5)+Sum$(Muon_pt>10&&abs(Muon_eta)<2.5)>=3" )
 elif isSinglelep:
     skimConds.append( "Sum$(Electron_pt>10&&abs(Electron_eta)<2.5) + Sum$(Muon_pt>10&&abs(Muon_eta)<2.5)>=1" )
 
 if 'ht500' in options.skim.lower():
     skimConds.append("Sum$(Jet_pt*(Jet_pt>20&&abs(Jet_eta)<2.4))>500")
 
-
 if isInclusive:
     skimConds.append('(1)')
     isSinglelep = True #otherwise no lepton variables?!
     isDilep     = True
-    isTrilep    = True
+
+################################################################################
+# B tagging SF
+b_tagger = "DeepJet"
+btagEff = BTagEfficiency( fastSim = False, year=options.era, tagger=b_tagger )
+btagRes = BTagReshaping( fastSim = False, year=options.era, tagger=b_tagger)
+################################################################################
 
 ################################################################################
 #Samples: Load samples
@@ -146,41 +155,49 @@ maxN = 1 if options.small else None
 if options.small:
     options.job = 0
     #options.nJobs = 1000 # set high to just run over 1 input file
-
+from Analysis.TopReco.TopReco import TopReco
 if options.central:
     if options.era == "UL2016":
         from Samples.nanoAOD.UL16_nanoAODv9 import allSamples as mcSamples
         from Samples.nanoAOD.UL16_DATA_nanoAODv9 import allSamples as dataSamples
         allSamples = mcSamples + dataSamples
+        topReco = TopReco( ROOT.Era.run2_13tev_2016, 2, 1, 0, tagger='btagDeepB')
     elif options.era == "UL2016_preVFP":
         from Samples.nanoAOD.UL16_nanoAODAPVv9 import allSamples as mcSamples
         from Samples.nanoAOD.UL16_DATA_nanoAODAPVv9 import allSamples as dataSamples
         allSamples = mcSamples + dataSamples
+        topReco = TopReco( ROOT.Era.run2_13tev_2016, 2, 1, 0, tagger='btagDeepB')
     elif options.era == "UL2017":
         from Samples.nanoAOD.UL17_nanoAODv9 import allSamples as mcSamples
         from Samples.nanoAOD.UL17_DATA_nanoAODv9 import allSamples as dataSamples
         allSamples = mcSamples + dataSamples
+        topReco = TopReco( ROOT.Era.run2_13tev_2017, 2, 1, 0, tagger='btagDeepB')
     elif options.era == "UL2018":
         from Samples.nanoAOD.UL18_nanoAODv9 import allSamples as mcSamples
         from Samples.nanoAOD.UL18_DATA_nanoAODv9 import allSamples as dataSamples
         allSamples = mcSamples + dataSamples
-#else:
-#    if options.era == "UL2016":
-#        from tttt.samples.nano_mc_private_UL20_Summer16  import allSamples as mcSamples
-#        from tttt.samples.nano_data_private_UL20_Run2016 import allSamples as dataSamples
-#        allSamples = mcSamples + dataSamples
-#    elif options.era == "UL2016_preVFP":
-#        from tttt.samples.nano_mc_private_UL20_Summer16_preVFP  import allSamples as mcSamples
-#        from tttt.samples.nano_data_private_UL20_Run2016_preVFP import allSamples as dataSamples
-#        allSamples = mcSamples + dataSamples
-#    elif options.era == "UL2017":
-#        from tttt.samples.nano_mc_private_UL20_Fall17    import allSamples as mcSamples
-#        from tttt.samples.nano_data_private_UL20_Run2017 import allSamples as dataSamples
-#        allSamples = mcSamples + dataSamples
-#    elif options.era == "UL2018":
-#        from tttt.samples.nano_mc_private_UL20_Autumn18  import allSamples as mcSamples
-#        from tttt.samples.nano_data_private_UL20_Run2018 import allSamples as dataSamples
-#        allSamples = mcSamples + dataSamples
+        topReco = TopReco( ROOT.Era.run2_13tev_2018, 2, 1, 0, tagger='btagDeepB')
+else:
+    if options.era == "UL2016":
+        from tttt.samples.nano_mc_private_UL20_Summer16  import allSamples as mcSamples
+        from tttt.samples.nano_data_private_UL20_Run2016 import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+        topReco = TopReco( ROOT.Era.run2_13tev_2016, 2, 1, 0, tagger='btagDeepB')
+    elif options.era == "UL2016_preVFP":
+        from tttt.samples.nano_mc_private_UL20_Summer16_preVFP  import allSamples as mcSamples
+        from tttt.samples.nano_data_private_UL20_Run2016_preVFP import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+        topReco = TopReco( ROOT.Era.run2_13tev_2016, 2, 1, 0, tagger='btagDeepB')
+    elif options.era == "UL2017":
+        from tttt.samples.nano_mc_private_UL20_Fall17    import allSamples as mcSamples
+        from tttt.samples.nano_data_private_UL20_Run2017 import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+        topReco = TopReco( ROOT.Era.run2_13tev_2017, 2, 1, 0, tagger='btagDeepB')
+    elif options.era == "UL2018":
+        from tttt.samples.nano_mc_private_UL20_Autumn18  import allSamples as mcSamples
+        from tttt.samples.nano_data_private_UL20_Run2018 import allSamples as dataSamples
+        allSamples = mcSamples + dataSamples
+        topReco = TopReco( ROOT.Era.run2_13tev_2018, 2, 1, 0, tagger='btagDeepB')
 
 # retrieve the sample by name
 sample = None
@@ -278,9 +295,6 @@ if hasattr( sample, "reweight_pkl" ):
 ## Sort the list of files?
 len_orig = len(sample.files)
 
-if options.nJobs>len(sample.files):
-    raise RuntimeError("NJobs incorrect! There are only %i files in sample %s in era %s. nJobs=%i"%(len(sample.files), sample.name, options.era, options.nJobs ) )
-
 sample = sample.split( n=options.nJobs, nSub=options.job)
 sample.isMC = not sample.isData
 logger.info( "fileBasedSplitting: Run over %i/%i files for job %i/%i."%(len(sample.files), len_orig, options.job, options.nJobs))
@@ -290,12 +304,6 @@ logger.debug("fileBasedSplitting: Files to be run over:\n%s", "\n".join(sample.f
 # Systematic variations
 addSystematicVariations = (not sample.isData) and (not options.skipSystematicVariations)
 
-################################################################################
-# B tagging SF
-b_tagger = "DeepJet"
-btagEff = BTagEfficiency( fastSim = False, year=options.era, tagger=b_tagger )
-btagRes = BTagReshaping( fastSim = False, year=options.era, tagger=b_tagger)
-################################################################################
 # tmp_output_directory
 tmp_output_directory  = os.path.join( user.postprocessing_tmp_directory, "%s_%s_%s_%s_%s"%(options.processingEra, options.era, options.skim, sample.name, str(uuid.uuid3(uuid.NAMESPACE_OID, sample.name))))
 if os.path.exists(tmp_output_directory) and options.overwrite:
@@ -337,8 +345,8 @@ sample.copy_files( os.path.join(tmp_output_directory, "input") )
 # Apply trigger selection
 treeFormulas = {}
 from TT2lUnbinned.Tools.triggerSelector import triggerSelector
-if (isTrilep or isDilep):
-    ts           = triggerSelector(year, isTrilep=isTrilep)
+if  isDilep:
+    ts           = triggerSelector(year, isTrilep=False)
     triggerCond  = ts.getSelection(options.sample if sample.isData else "MC", triggerList = ts.getTriggerList(sample) )
 elif isSinglelep:
     electriggers = "HLT_Ele8_CaloIdM_TrackIdM_PFJet30||HLT_Ele17_CaloIdM_TrackIdM_PFJet30"
@@ -560,13 +568,13 @@ new_variables.extend( ['ht/F', 'nBTag/I', 'm3/F', 'minDLmass/F'] )
 
 new_variables.append( 'lep[%s]'% ( ','.join(lepVars )) )
 
-if isTrilep or isDilep or isSinglelep:
+if isDilep or isSinglelep:
     new_variables.extend( ['nGoodMuons/I', 'nGoodElectrons/I', 'nGoodLeptons/I' ] )
     new_variables.extend( ['l1_pt/F', 'l1_mvaTOP/F', 'l1_mvaTOPWP/I', 'l1_mvaTOPv2/F', 'l1_mvaTOPv2WP/I', 'l1_ptCone/F', 'l1_eta/F', 'l1_phi/F', 'l1_pdgId/I', 'l1_index/I', 'l1_jetPtRelv2/F', 'l1_jetPtRatio/F', 'l1_miniRelIso/F', 'l1_relIso03/F', 'l1_dxy/F', 'l1_dz/F', 'l1_mIsoWP/I', 'l1_eleIndex/I', 'l1_muIndex/I', 'l1_isFO/O', 'l1_isTight/O'] )
     new_variables.extend( ['mlmZ_mass/F'])
     if sample.isMC:
         new_variables.extend(['reweightLeptonSF/F', 'reweightLeptonSFUp/F', 'reweightLeptonSFDown/F'])
-if isTrilep or isDilep:
+if isDilep:
     new_variables.extend( ['l2_pt/F', 'l2_mvaTOP/F', 'l2_mvaTOPWP/I', 'l2_mvaTOPv2/F', 'l2_mvaTOPv2WP/I', 'l2_ptCone/F', 'l2_eta/F', 'l2_phi/F', 'l2_pdgId/I', 'l2_index/I', 'l2_jetPtRelv2/F', 'l2_jetPtRatio/F', 'l2_miniRelIso/F', 'l2_relIso03/F', 'l2_dxy/F', 'l2_dz/F', 'l2_mIsoWP/I', 'l2_eleIndex/I', 'l2_muIndex/I', 'l2_isFO/O', 'l2_isTight/O'] )
     if sample.isMC: new_variables.extend( \
         [   'genZ1_pt/F', 'genZ1_eta/F', 'genZ1_phi/F',
@@ -574,10 +582,23 @@ if isTrilep or isDilep:
             'reweightTrigger/F', 'reweightTriggerUp/F', 'reweightTriggerDown/F',
             'reweightLeptonTrackingSF/F',
          ] )
-if isTrilep:
-    new_variables.extend( ['l3_pt/F', 'l3_mvaTOP/F', 'l3_mvaTOPWP/I', 'l3_mvaTOPv2/F', 'l3_mvaTOPv2WP/I', 'l3_ptCone/F', 'l3_eta/F', 'l3_phi/F', 'l3_pdgId/I', 'l3_index/I', 'l3_jetPtRelv2/F', 'l3_jetPtRatio/F', 'l3_miniRelIso/F', 'l3_relIso03/F', 'l3_dxy/F', 'l3_dz/F', 'l3_mIsoWP/I', 'l3_eleIndex/I', 'l3_muIndex/I', 'l3_isFO/O', 'l3_isTight/O'] )
-    new_variables.extend( ['l4_pt/F', 'l4_mvaTOP/F', 'l4_mvaTOPWP/I', 'l4_mvaTOPv2/F', 'l4_mvaTOPv2WP/I', 'l4_ptCone/F', 'l4_eta/F', 'l4_phi/F', 'l4_pdgId/I', 'l4_index/I', 'l4_jetPtRelv2/F', 'l4_jetPtRatio/F', 'l4_miniRelIso/F', 'l4_relIso03/F', 'l4_dxy/F', 'l4_dz/F', 'l4_mIsoWP/I', 'l4_eleIndex/I', 'l4_muIndex/I', 'l4_isFO/O', 'l4_isTight/O'] )
 
+    new_variables.extend( [
+        "tr_jetB_index/I", "tr_jetBbar_index/I", "tr_ntags/I",
+        "tr_neutrino_pt/F", "tr_neutrino_eta/F", "tr_neutrino_phi/F", "tr_neutrino_mass/F", 
+        "tr_neutrinoBar_pt/F", "tr_neutrinoBar_eta/F", "tr_neutrinoBar_phi/F", "tr_neutrinoBar_mass/F", 
+        "tr_ttbar_pt/F", "tr_ttbar_eta/F", "tr_ttbar_phi/F", "tr_ttbar_mass/F", 
+        "tr_top_pt/F", "tr_top_eta/F", "tr_top_phi/F", "tr_top_mass/F", "tr_topBar_pt/F", "tr_topBar_eta/F", "tr_topBar_phi/F", "tr_topBar_mass/F", 
+        "tr_Wminus_pt/F", "tr_Wminus_eta/F", "tr_Wminus_phi/F", "tr_Wminus_mass/F", "tr_Wplus_pt/F", "tr_Wplus_eta/F", "tr_Wplus_phi/F", "tr_Wplus_mass/F", 
+        ])
+
+    new_variables += ["tr_cosThetaPlus_n/F", "tr_cosThetaMinus_n/F", "tr_cosThetaPlus_r/F", "tr_cosThetaMinus_r/F", "tr_cosThetaPlus_k/F", "tr_cosThetaMinus_k/F", 
+                  "tr_cosThetaPlus_r_star/F", "tr_cosThetaMinus_r_star/F", "tr_cosThetaPlus_k_star/F", "tr_cosThetaMinus_k_star/F",
+                  "tr_xi_nn/F", "tr_xi_rr/F", "tr_xi_kk/F", 
+                  "tr_xi_nr_plus/F", "tr_xi_nr_minus/F", "tr_xi_rk_plus/F", "tr_xi_rk_minus/F", "tr_xi_nk_plus/F", "tr_xi_nk_minus/F", 
+                  "tr_cos_phi/F", "tr_cos_phi_lab/F", "tr_abs_delta_phi_ll_lab/F",
+                 ] 
+        
 if addReweights:
 #    sample.chain.SetAlias("nLHEReweighting",       "nLHEReweightingWeight")
 #    sample.chain.SetAlias("LHEReweighting_Weight", "LHEReweightingWeight")
@@ -610,43 +631,6 @@ if addSystematicVariations:
     if sample.isMC:
         for k in bTagVariations.keys():
             new_variables.append('reweightBTagSF_'+k+'/F')
-
-#Other list of jes uncertainties from NanoAODTools/python/postprocessing/modules/jme/jecUncertainties.py
-# allUncerts = [
-#     "AbsoluteStat", "AbsoluteScale",
-#     "AbsoluteFlavMap", "AbsoluteMPFBias",
-#     "Fragmentation", "SinglePionECAL",
-#     "SinglePionHCAL", "FlavorQCD",
-#     "TimePtEta", "RelativeJEREC1",
-#     "RelativeJEREC2", "RelativeJERHF",
-#     "RelativePtBB", "RelativePtEC1",
-#     "RelativePtEC2", "RelativePtHF",
-#     "RelativeBal", "RelativeFSR",
-#     "RelativeStatFSR", "RelativeStatEC",
-#     "RelativeStatHF", "PileUpDataMC",
-#     "PileUpPtRef", "PileUpPtBB",
-#     "PileUpPtEC1", "PileUpPtEC2",
-#     "PileUpPtHF", "PileUpMuZero",
-#     "PileUpEnvelope", "SubTotalPileUp",
-#     "SubTotalRelative", "SubTotalPt",
-#     "SubTotalScale", "SubTotalAbsolute",
-#     "SubTotalMC", "Total",
-#     "TotalNoFlavor", "TotalNoTime",
-#     "TotalNoFlavorNoTime", "FlavorZJet",
-#     "FlavorPhotonJet", "FlavorPureGluon",
-#     "FlavorPureQuark", "FlavorPureCharm",
-#     "FlavorPureBottom", "TimeRunBCD",
-#     "TimeRunEF", "TimeRunG",
-#     "TimeRunH", "CorrelationGroupMPFInSitu",
-#     "CorrelationGroupIntercalibration", "CorrelationGroupbJES",
-#     "CorrelationGroupFlavor", "CorrelationGroupUncorrelated",
-#     ]
-
-#Comment 1a method (tbc)
-# Btag weights Method 1a
-# for var in btagEff.btagWeightNames:
-#     if var!='MC':
-#         new_variables.append('reweightBTag_'+var+'/F')
 
 if not options.skipNanoTools:
     ### nanoAOD postprocessor
@@ -749,6 +733,10 @@ FOmuSelector  = muonSelector("FOmvaTOPT", year = year )
 TighteleSelector = eleSelector( "mvaTOPT", year = year )
 TightmuSelector  = muonSelector("mvaTOPT", year = year )
 
+def makeP4(pt, eta, phi, mass):
+     v = ROOT.TLorentzVector()
+     v.SetPtEtaPhiM(pt, eta, phi, mass)
+     return v
 
 ################################################################################
 # FILL EVENT INFO HERE
@@ -1040,7 +1028,7 @@ def filler( event ):
                 setattr(event, "nBTag_"+var,    len(bjets_sys[var]))
                 setattr(event, "ht_"+var,   sum([j['pt_'+var] for j in jets_sys[var]]))
 
-    if isSinglelep or isTrilep or isDilep:
+    if isSinglelep or isDilep:
         event.nGoodMuons      = len(filter( lambda l:abs(l['pdgId'])==13, leptons))
         event.nGoodElectrons  = len(filter( lambda l:abs(l['pdgId'])==11, leptons))
         event.nGoodLeptons    = len(leptons)
@@ -1074,7 +1062,7 @@ def filler( event ):
             event.reweightTriggerUp     = trig_eff + trig_eff_err
             event.reweightTriggerDown   = trig_eff - trig_eff_err
 
-            leptonsForSF   = ( leptons[:2] if isDilep else (leptons[:3] if isTrilep else leptons[:1]) )
+            leptonsForSF   = ( leptons[:2] if isDilep else leptons[:1]) 
             leptonSFValues = [ leptonSF.getSF(pdgId=l['pdgId'], pt=l['pt'], eta=((l['eta'] + l['deltaEtaSC']) if abs(l['pdgId'])==11 else l['eta'])) for l in leptonsForSF ]
             leptonSFUp     = [ leptonSF.getSF(pdgId=l['pdgId'], pt=l['pt'], eta=((l['eta'] + l['deltaEtaSC']) if abs(l['pdgId'])==11 else l['eta']), sigma=1) for l in leptonsForSF ]
             leptonSFDown   = [ leptonSF.getSF(pdgId=l['pdgId'], pt=l['pt'], eta=((l['eta'] + l['deltaEtaSC']) if abs(l['pdgId'])==11 else l['eta']), sigma=-1) for l in leptonsForSF ]
@@ -1084,7 +1072,7 @@ def filler( event ):
             if event.reweightLeptonSF ==0:
                logger.error( "reweightLeptonSF is zero!")
 
-    if isTrilep or isDilep:
+    if isDilep:
         if len(leptons)>=2:
             event.l2_pt         = leptons[1]['pt']
             event.l2_mvaTOP     = leptons[1]['mvaTOP']
@@ -1104,6 +1092,152 @@ def filler( event ):
             event.l2_muIndex    = leptons[1]['muIndex']
             event.l2_isFO       = leptons[1]['isFO']
             event.l2_isTight    = leptons[1]['isTight']
+
+            sol = topReco.evaluate( leptons = [{'pt':event.l1_pt, 'eta':event.l1_eta, 'phi':event.l1_phi, 'pdgId':event.l1_pdgId},
+                                               {'pt':event.l2_pt, 'eta':event.l2_eta, 'phi':event.l2_phi, 'pdgId':event.l2_pdgId},],
+                                    jets    = jets,
+                                    met     = {'pt':event.met_pt, 'phi':event.met_phi} )
+            if sol:
+                event.tr_jetB_index    = sol.jetB_index
+                event.tr_jetBbar_index = sol.jetBbar_index
+                event.tr_ntags         = sol.ntags
+
+                event.tr_neutrino_pt   = sol.neutrino.Pt()
+                event.tr_neutrino_eta  = sol.neutrino.Eta()
+                event.tr_neutrino_phi  = sol.neutrino.Phi()
+                event.tr_neutrino_mass = sol.neutrino.M()
+
+                event.tr_neutrinoBar_pt   = sol.neutrinoBar.Pt()
+                event.tr_neutrinoBar_eta  = sol.neutrinoBar.Eta()
+                event.tr_neutrinoBar_phi  = sol.neutrinoBar.Phi()
+                event.tr_neutrinoBar_mass = sol.neutrinoBar.M()
+
+                event.tr_ttbar_pt   = sol.ttbar.Pt()
+                event.tr_ttbar_eta  = sol.ttbar.Eta()
+                event.tr_ttbar_phi  = sol.ttbar.Phi()
+                event.tr_ttbar_mass = sol.ttbar.M()
+
+                event.tr_top_pt   = sol.top.Pt()
+                event.tr_top_eta  = sol.top.Eta()
+                event.tr_top_phi  = sol.top.Phi()
+                event.tr_top_mass = sol.top.M()
+
+                event.tr_topBar_pt   = sol.topBar.Pt()
+                event.tr_topBar_eta  = sol.topBar.Eta()
+                event.tr_topBar_phi  = sol.topBar.Phi()
+                event.tr_topBar_mass = sol.topBar.M()
+
+                event.tr_Wminus_pt   = sol.Wminus.Pt()
+                event.tr_Wminus_eta  = sol.Wminus.Eta()
+                event.tr_Wminus_phi  = sol.Wminus.Phi()
+                event.tr_Wminus_mass = sol.Wminus.M()
+
+                event.tr_Wplus_pt   = sol.Wplus.Pt()
+                event.tr_Wplus_eta  = sol.Wplus.Eta()
+                event.tr_Wplus_phi  = sol.Wplus.Phi()
+                event.tr_Wplus_mass = sol.Wplus.M()
+
+                boost_tt =  sol.ttbar.BoostVector()
+
+                p4_top      = copy.deepcopy(sol.top)
+                p4_antitop  = copy.deepcopy(sol.topBar)
+            
+                p4_l1 = makeP4( event.l1_pt, event.l1_eta, event.l1_phi, 0.)
+                p4_l2 = makeP4( event.l2_pt, event.l2_eta, event.l2_phi, 0.)
+                # define momenta equivalent to 2l bernreuther 2l definition
+                p4_l_plus, p4_l_minus = (p4_l1, p4_l2) if event.l1_pdgId<0 else (p4_l2, p4_l1) 
+                #sign_charge = -1 if  lepTop_parton['pdgId']==-6 else +1 # the l- in Bernreuther has a - for each axis. So we add a - to the axis if our lepton is negatively charged (coming from anti-top)
+
+                # lab frame cosine of lepton unit vectors (TOP-18-006 Table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf)
+                event.tr_cos_phi_lab          = p4_l_minus.Vect().Unit().Dot(p4_l_plus.Vect().Unit())
+                event.tr_abs_delta_phi_ll_lab = abs( deltaPhi( p4_l_minus.Phi(), p4_l_plus.Phi() ) )
+                #print ("cos_phi_lab", cos_phi_lab, "abs_delta_phi_ll_lab", abs_delta_phi_ll_lab)
+
+                #print "top"
+                #print p4_top.Print()
+                #print "anti-top"
+                #print p4_antitop.Print()
+
+                #print "Boost vector"
+                #ost_tt.Print()
+
+                p4_top.Boost(-boost_tt)
+                p4_antitop.Boost(-boost_tt)
+                #print "top after boost"
+                #print p4_top.Print()
+                #print "anti-top after boost"
+                #print p4_antitop.Print()
+
+                p4_l_plus.Boost(-boost_tt)
+                p4_l_minus.Boost(-boost_tt)
+                #print "After boost p4_l_plus"
+                #p4_l_plus.Print()
+                #print "After boost p4_l_minus"
+                #p4_l_minus.Print()
+
+                # lepton momenta definitions below Eq. 4.6 in Bernreuther -> from the ZMF boost into t (or tbar) system and take unit vectors 
+                p4_l_plus.Boost(-p4_top.BoostVector())
+                p4_l_minus.Boost(-p4_antitop.BoostVector())
+                l_plus = p4_l_plus.Vect().Unit() 
+                l_minus = p4_l_minus.Vect().Unit()
+
+                # Eq. 4.13 basis of the ttbar system
+                k_hat = p4_top.Vect().Unit()
+                p_hat = ROOT.TVector3(0,0,1) # Eq. 4.13 Bernreuther! 
+                y = k_hat.Dot(p_hat)
+                r = sqrt( 1-y**2 )  
+                r_hat = 1./r*(p_hat - (k_hat*y) ) #This needs the import of fixTVecMul. 
+                n_hat = 1./r*(p_hat.Cross(k_hat))
+
+                sign_ =  float(np.sign(y)) # Bernreuther Table 5
+                n_a =  sign_*n_hat
+                r_a =  sign_*r_hat
+                k_a =  k_hat
+
+                #print "n_a"
+                #n_a.Print()
+                #print "r_a"
+                #r_a.Print()
+                #print "k_a"
+                #k_a.Print()
+
+                # Eq 4.21 Bernreuther (k* and r*)
+                sign_star = float(np.sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity())))
+                k_a_star  = sign_star*k_hat
+                r_a_star  = sign_star*sign_*r_hat
+            
+                # Bernreuther Eq. 4.7
+                event.tr_cosThetaPlus_n  = n_a.Dot(l_plus)
+                event.tr_cosThetaMinus_n =-n_a.Dot(l_minus)
+                event.tr_cosThetaPlus_r  = r_a.Dot(l_plus)
+                event.tr_cosThetaMinus_r =-r_a.Dot(l_minus)
+                event.tr_cosThetaPlus_k  = k_a.Dot(l_plus)
+                event.tr_cosThetaMinus_k =-k_a.Dot(l_minus)
+
+                event.tr_cosThetaPlus_r_star  = r_a_star.Dot(l_plus)
+                event.tr_cosThetaMinus_r_star =-r_a_star.Dot(l_minus)
+                event.tr_cosThetaPlus_k_star  = k_a_star.Dot(l_plus)
+                event.tr_cosThetaMinus_k_star =-k_a_star.Dot(l_minus)
+
+                # TOP-18-006 table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf
+                event.tr_xi_nn = event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_n 
+                event.tr_xi_rr = event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_r 
+                event.tr_xi_kk = event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_k
+
+                event.tr_xi_nr_plus = event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_r + event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_n
+                event.tr_xi_nr_minus= event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_r - event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_n
+                event.tr_xi_rk_plus = event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_k + event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_r
+                event.tr_xi_rk_minus= event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_k - event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_r
+                event.tr_xi_nk_plus = event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_k + event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_n
+                event.tr_xi_nk_minus= event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_k - event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_n
+
+                #print "l_plus unit"
+                #l_plus.Print()
+                #print "l_minus unit"
+                #l_minus.Print()
+
+                event.tr_cos_phi     = l_plus.Dot(l_minus)
+
 
             if sample.isMC:
               genZs = getGenZs(gPart)

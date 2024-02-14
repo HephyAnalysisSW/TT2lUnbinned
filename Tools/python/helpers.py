@@ -9,7 +9,7 @@ import  logging
 logger  = logging.getLogger(__name__)
 
 #scripts
-ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/TT2lUnbinned/Tools/scripts/tdrstyle.C")
+ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/tttt/Tools/scripts/tdrstyle.C")
 ROOT.setTDRStyle()
 mZ=91.1876
 
