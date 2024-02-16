@@ -179,24 +179,20 @@ if options.central:
         topReco = TopReco( ROOT.Era.run2_13tev_2018, 2, 1, 0, tagger='btagDeepB')
 else:
     if options.era == "UL2016":
-        from tttt.samples.nano_mc_private_UL20_Summer16  import allSamples as mcSamples
-        from tttt.samples.nano_data_private_UL20_Run2016 import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
+        from TT2lUnbinned.Samples.nano_mc_private_UL20_Summer16  import allSamples as mcSamples
+        allSamples = mcSamples
         topReco = TopReco( ROOT.Era.run2_13tev_2016, 2, 1, 0, tagger='btagDeepB')
     elif options.era == "UL2016_preVFP":
-        from tttt.samples.nano_mc_private_UL20_Summer16_preVFP  import allSamples as mcSamples
-        from tttt.samples.nano_data_private_UL20_Run2016_preVFP import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
+        from TT2lUnbinned.Samples.nano_mc_private_UL20_Summer16_preVFP  import allSamples as mcSamples
+        allSamples = mcSamples
         topReco = TopReco( ROOT.Era.run2_13tev_2016, 2, 1, 0, tagger='btagDeepB')
     elif options.era == "UL2017":
-        from tttt.samples.nano_mc_private_UL20_Fall17    import allSamples as mcSamples
-        from tttt.samples.nano_data_private_UL20_Run2017 import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
+        from TT2lUnbinned.Samples.nano_mc_private_UL20_Fall17    import allSamples as mcSamples
+        allSamples = mcSamples
         topReco = TopReco( ROOT.Era.run2_13tev_2017, 2, 1, 0, tagger='btagDeepB')
     elif options.era == "UL2018":
-        from tttt.samples.nano_mc_private_UL20_Autumn18  import allSamples as mcSamples
-        from tttt.samples.nano_data_private_UL20_Run2018 import allSamples as dataSamples
-        allSamples = mcSamples + dataSamples
+        from TT2lUnbinned.Samples.nano_mc_private_UL20_Autumn18  import allSamples as mcSamples
+        allSamples = mcSamples
         topReco = TopReco( ROOT.Era.run2_13tev_2018, 2, 1, 0, tagger='btagDeepB')
 
 # retrieve the sample by name
@@ -1137,7 +1133,12 @@ def filler( event ):
                 event.tr_Wplus_phi  = sol.Wplus.Phi()
                 event.tr_Wplus_mass = sol.Wplus.M()
 
+                # Eq 4.21 Bernreuther for (k* and r*); absolute rapidity difference in the lab frame!
+                sign_star = float(np.sign(abs(sol.top.Rapidity()) - abs(sol.topBar.Rapidity())))
+
                 boost_tt =  sol.ttbar.BoostVector()
+
+                #print "sol.top.Rapidity()", sol.top.Rapidity(),"sol.topBar.Rapidity()",sol.topBar.Rapidity()
 
                 p4_top      = copy.deepcopy(sol.top)
                 p4_antitop  = copy.deepcopy(sol.topBar)
@@ -1152,14 +1153,14 @@ def filler( event ):
                 event.tr_cos_phi_lab          = p4_l_minus.Vect().Unit().Dot(p4_l_plus.Vect().Unit())
                 event.tr_abs_delta_phi_ll_lab = abs( deltaPhi( p4_l_minus.Phi(), p4_l_plus.Phi() ) )
                 #print ("cos_phi_lab", cos_phi_lab, "abs_delta_phi_ll_lab", abs_delta_phi_ll_lab)
-
+                #print "Before Boost into ttbar system"
                 #print "top"
                 #print p4_top.Print()
                 #print "anti-top"
                 #print p4_antitop.Print()
 
                 #print "Boost vector"
-                #ost_tt.Print()
+                #boost_tt.Print()
 
                 p4_top.Boost(-boost_tt)
                 p4_antitop.Boost(-boost_tt)
@@ -1200,12 +1201,23 @@ def filler( event ):
                 #r_a.Print()
                 #print "k_a"
                 #k_a.Print()
+                #print "r_hat"
+                #r_hat.Print()
+                #print "n_hat"
+                #n_hat.Print()
 
                 # Eq 4.21 Bernreuther (k* and r*)
-                sign_star = float(np.sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity())))
+                #sign_star = float(np.sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity()))) #WRONG it must be in the lab frame!!
                 k_a_star  = sign_star*k_hat
                 r_a_star  = sign_star*sign_*r_hat
-            
+
+
+                #print "p4_top.Rapidity()",p4_top.Rapidity(),"p4_antitop.Rapidity()",p4_antitop.Rapidity(),"np.sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity()))",np.sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity()))
+                #print "r",r,"y",y,"k_hat*y",k_hat*y
+                #print "sign_star",sign_star,"sign_",sign_,"r_hat",r_hat
+           
+                #if sign_star==0: raise RuntimeError
+ 
                 # Bernreuther Eq. 4.7
                 event.tr_cosThetaPlus_n  = n_a.Dot(l_plus)
                 event.tr_cosThetaMinus_n =-n_a.Dot(l_minus)
@@ -1218,6 +1230,20 @@ def filler( event ):
                 event.tr_cosThetaMinus_r_star =-r_a_star.Dot(l_minus)
                 event.tr_cosThetaPlus_k_star  = k_a_star.Dot(l_plus)
                 event.tr_cosThetaMinus_k_star =-k_a_star.Dot(l_minus)
+
+                #print "r_a_star"
+                #r_a_star.Print()
+                #print "k_a_star"
+                #k_a_star.Print()
+                #print "l_plus"
+                #l_plus.Print()
+                #print "l_minus"
+                #l_minus.Print()
+
+                #print "tr_cosThetaPlus_r_star", event.tr_cosThetaPlus_r_star
+                #print "tr_cosThetaMinus_r_star", event.tr_cosThetaMinus_r_star
+                #print "tr_cosThetaPlus_k_star", event.tr_cosThetaPlus_k_star
+                #print "tr_cosThetaMinus_k_star", event.tr_cosThetaMinus_k_star
 
                 # TOP-18-006 table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf
                 event.tr_xi_nn = event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_n 
