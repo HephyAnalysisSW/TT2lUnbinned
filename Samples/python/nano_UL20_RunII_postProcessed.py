@@ -10,10 +10,10 @@ from RootTools.core.standard import *
 #
 #lumi_era  = {'Run2016':Run2016.lumi, 'Run2016_preVFP':Run2016_preVFP.lumi, 'Run2017':Run2017.lumi, 'Run2018':Run2018.lumi}
 
-import TT2lUnbinned.Samples.nano_mc_central_UL20_Summer16_preVFP_postProcessed as Summer16_preVFP
-import TT2lUnbinned.Samples.nano_mc_central_UL20_Summer16_postProcessed as Summer16
-import TT2lUnbinned.Samples.nano_mc_central_UL20_Fall17_postProcessed as Fall17
-import TT2lUnbinned.Samples.nano_mc_central_UL20_Autumn18_postProcessed as Autumn18
+import TT2lUnbinned.Samples.nano_mc_UL20_Summer16_preVFP_postProcessed as Summer16_preVFP
+import TT2lUnbinned.Samples.nano_mc_UL20_Summer16_postProcessed as Summer16
+import TT2lUnbinned.Samples.nano_mc_UL20_Fall17_postProcessed as Fall17
+import TT2lUnbinned.Samples.nano_mc_UL20_Autumn18_postProcessed as Autumn18
 
 TTLep       = Sample.combine( "TTLep", [Summer16_preVFP.TTLep, Summer16.TTLep, Fall17.TTLep, Autumn18.TTLep], texName = "t#bar{t}")
 ST          = Sample.combine( "ST",    [Summer16_preVFP.ST, Summer16.ST, Fall17.ST, Autumn18.ST],             texName = "t/tW")
