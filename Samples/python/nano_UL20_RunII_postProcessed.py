@@ -23,3 +23,6 @@ TTZ         = Sample.combine( "TTZ",   [Summer16_preVFP.TTZ, Summer16.TTZ, Fall1
 TTH         = Sample.combine( "TTH",   [Summer16_preVFP.TTH, Summer16.TTH, Fall17.TTH, Autumn18.TTH],         texName = "t#bar{t}H")
 DY          = Sample.combine( "DY",    [Summer16_preVFP.DY, Summer16.DY, Fall17.DY, Autumn18.DY],             texName = "DY")
 DiBoson     = Sample.combine( "DiBoson", [Summer16_preVFP.DiBoson, Summer16.DiBoson, Fall17.DiBoson, Autumn18.DiBoson], texName = "DiBoson")
+
+TT01j1lCAv2Ref_HT800 =  Sample.combine( "TT01j1lCAv2Ref_HT800", [Summer16_preVFP.TT01j1lCAv2Ref_HT800, Summer16.TT01j1lCAv2Ref_HT800, Fall17.TT01j1lCAv2Ref_HT800, Autumn18.TT01j1lCAv2Ref_HT800], texName = "TT01j1lCAv2Ref_HT800") 
+TT01j2lCAv2Ref_HT500 =  Sample.combine( "TT01j2lCAv2Ref_HT500", [Summer16_preVFP.TT01j2lCAv2Ref_HT500, Summer16.TT01j2lCAv2Ref_HT500, Fall17.TT01j2lCAv2Ref_HT500, Autumn18.TT01j2lCAv2Ref_HT500], texName = "TT01j2lCAv2Ref_HT500") 
