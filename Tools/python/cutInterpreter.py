@@ -15,8 +15,7 @@ ele_string = lepString('ele','T')
 
 special_cuts = {
 
-    "example":         "l1_pt>50",
-
+    "tr":              "tr_ttbar_mass>=0",
     "singlelep":       "l1_pt>20",
     "singlelepVL":     "l1_pt>20",
     "singlelepL":      "l1_pt>20&&l1_mvaTOPWP>=2",
@@ -43,12 +42,7 @@ special_cuts = {
     #"OS":              "(Sum$(lep_isFO)==2&&Sum$(lep_isTight)==2&&(l1_pdgId/abs(l1_pdgId))*(abs(l2_pdgId)/l2_pdgId)<0)",
     #"SS":              "(Sum$(lep_isFO)==2&&Sum$(lep_isTight)==2&&(l1_pdgId/abs(l1_pdgId))*(abs(l2_pdgId)/l2_pdgId)>0)",
 
-    "OS":              "(l1_pdgId/abs(l1_pdgId))*(abs(l2_pdgId)/l2_pdgId)<0&&(abs(l2_pdgId)>=11)",
-    "SS":              "(l1_pdgId/abs(l1_pdgId))*(abs(l2_pdgId)/l2_pdgId)>0&&(abs(l2_pdgId)>=11)",
-
     "trg":             "triggerDecision",
-
-    #"leptonveto":      "(Sum$(lep_isFO))==3&&(Sum$(lep_isTight))==3",
 
     "onZ1"   :         "abs(Z1_mass-91.2)<10",
     "offZ1"  :         "(!(abs(Z1_mass-91.2)<15))",

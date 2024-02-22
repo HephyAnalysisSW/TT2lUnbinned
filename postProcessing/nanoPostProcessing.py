@@ -25,6 +25,7 @@ from TT2lUnbinned.Tools.helpers             import closestOSDLMassToMZ, deltaR, 
 from TT2lUnbinned.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGenPartsAll, getJets, genLepFromZ, getGenZs, isAnalysisJet
 from TT2lUnbinned.Tools.triggerEfficiency   import triggerEfficiency
 import TT2lUnbinned.Tools.fixTVecMul
+from TT2lUnbinned.Analysis.phasespace.default import phasespace
 
 # Analysis
 from Analysis.Tools.mvaTOPreader             import mvaTOPreader
@@ -560,9 +561,14 @@ new_variables.append('JetGood[%s]'% ( ','.join(jetVars+['index/I', 'isBJet/O', '
 #    new_variables.append('JetGood[%s]'% ( ','.join(jetVars+['index/I', 'isBJet/O', 'isBJet_tight/O', 'isBJet_medium/O', 'isBJet_loose/O']) + ( ',genPt/F,nBHadrons/I,nCHadrons/I' if sample.isMC else '' )))
 
 if sample.isData: new_variables.extend( ['jsonPassed/I','isData/I'] )
-new_variables.extend( ['ht/F', 'nBTag/I', 'm3/F', 'minDLmass/F'] )
+new_variables.extend( ['ht/F', 'nBTag/I', 'm3/F', 'minDLmass/F', "overflow_counter/I"] )
 
 new_variables.append( 'lep[%s]'% ( ','.join(lepVars )) )
+
+
+new_variables.extend( ['jet0_pt/F',  'jet1_pt/F',  'jet2_pt/F' ] )
+new_variables.extend( ['jet0_eta/F', 'jet1_eta/F', 'jet2_eta/F' ] )
+new_variables.extend( ['jet0_phi/F', 'jet1_phi/F', 'jet2_phi/F' ] )
 
 if isDilep or isSinglelep:
     new_variables.extend( ['nGoodMuons/I', 'nGoodElectrons/I', 'nGoodLeptons/I' ] )
@@ -593,7 +599,7 @@ if isDilep:
                   "tr_xi_nn/F", "tr_xi_rr/F", "tr_xi_kk/F", 
                   "tr_xi_nr_plus/F", "tr_xi_nr_minus/F", "tr_xi_rk_plus/F", "tr_xi_rk_minus/F", "tr_xi_nk_plus/F", "tr_xi_nk_minus/F", 
                   "tr_cos_phi/F", "tr_cos_phi_lab/F", "tr_abs_delta_phi_ll_lab/F",
-                  "tr_top_decayAngle_phi/F", "tr_top_decayAngle_theta/F", "tr_topBar_decayAngle_phi/F", "tr_topBar_decayAngle_theta/F"
+                  #"tr_top_decayAngle_phi/F", "tr_top_decayAngle_theta/F", "tr_topBar_decayAngle_phi/F", "tr_topBar_decayAngle_theta/F"
                  ] 
         
 if addReweights:
@@ -983,6 +989,13 @@ def filler( event ):
         event.JetGood_isBJet_medium[iJet] = isBJet(jet, tagger=b_tagger, WP='medium', year=options.era)
         event.JetGood_isBJet_loose[iJet]  = isBJet(jet, tagger=b_tagger, WP='loose',  year=options.era)
 
+        if iJet==0:
+            event.jet0_pt, event.jet0_eta, event.jet0_phi = jet['pt'], jet['eta'], jet['phi']
+        elif iJet==1:
+            event.jet1_pt, event.jet1_eta, event.jet1_phi = jet['pt'], jet['eta'], jet['phi']
+        elif iJet==2:
+            event.jet2_pt, event.jet2_eta, event.jet2_phi = jet['pt'], jet['eta'], jet['phi']
+
         #event.ht[iJet] = [sum(jet['pt'])]
         if sample.isMC:
             #if not options.central:
@@ -1091,9 +1104,9 @@ def filler( event ):
             event.l2_isTight    = leptons[1]['isTight']
 
             l1 = ROOT.TLorentzVector()
-            l1.SetPtEtaPhiM(leptons[0]['pt'], leptons[1]['eta'], leptons[1]['phi'], 0 )
+            l1.SetPtEtaPhiM(leptons[0]['pt'], leptons[0]['eta'], leptons[0]['phi'], 0 )
             l2 = ROOT.TLorentzVector()
-            l1.SetPtEtaPhiM(leptons[1]['pt'], leptons[1]['eta'], leptons[1]['phi'], 0 )
+            l2.SetPtEtaPhiM(leptons[1]['pt'], leptons[1]['eta'], leptons[1]['phi'], 0 )
             l12 = l1 + l2
 
             event.l12_pt  = l12.Pt()
@@ -1146,69 +1159,99 @@ def filler( event ):
                 event.tr_Wplus_phi  = sol.Wplus.Phi()
                 event.tr_Wplus_mass = sol.Wplus.M()
 
-                # compute theta and phi (Suman approved)
-                beam = ROOT.TLorentzVector()
-                beam.SetPxPyPzE(0,0,6500,6500)
+                ## compute theta and phi (Suman approved)
+                #beam = ROOT.TLorentzVector()
+                #beam.SetPxPyPzE(0,0,6500,6500)
 
-                boost_t    = sol.top.BoostVector() 
-                boost_tBar = sol.topBar.BoostVector() 
+                #boost_t    = sol.top.BoostVector() 
+                #boost_tBar = sol.topBar.BoostVector() 
 
-                # copy the vectors, originals will still be needed
-                Wplus_p4  = copy.deepcopy(sol.Wplus)
-                lplus_p4  = makeP4(sol.leptonPlus.Pt(), sol.leptonPlus.Eta(),sol.leptonPlus.Phi(), 0.)
-                lnu_p4    = copy.deepcopy(sol.neutrino)
+                ## copy the vectors, originals will still be needed
+                #Wplus_p4  = copy.deepcopy(sol.Wplus)
+                #lplus_p4  = makeP4(sol.leptonPlus.Pt(), sol.leptonPlus.Eta(),sol.leptonPlus.Phi(), 0.)
+                #lnu_p4    = copy.deepcopy(sol.neutrino)
 
-                Wplus_p4 .Boost(-boost_t)
-                lplus_p4 .Boost(-boost_t)
-                lnu_p4   .Boost(-boost_t)
+                #print "sol.top"
+                #sol.top.Print()
+                #print "sol.topBar"
+                #sol.topBar.Print()
 
-                Wminus_p4  = copy.deepcopy(sol.Wminus)
-                lminus_p4  = makeP4(sol.leptonMinus.Pt(), sol.leptonMinus.Eta(),sol.leptonMinus.Phi(), 0.)
-                lnuBar_p4  = copy.deepcopy(sol.neutrinoBar)
+                #print "boost_t"
+                #boost_t.Print()
+                #print "boost_tBar"
+                #boost_tBar.Print()
 
-                Wminus_p4 .Boost(-boost_tBar)
-                lminus_p4 .Boost(-boost_tBar)
-                lnuBar_p4 .Boost(-boost_tBar)
+                #print "Wplus_p4 before"
+                #Wplus_p4.Print()
+                #
+                #Wplus_p4 .Boost(-boost_t)
+                #lplus_p4 .Boost(-boost_t)
+                #lnu_p4   .Boost(-boost_t)
 
-                nplus_scatter  = ((beam.Vect().Unit()).Cross(Wplus_p4.Vect())).Unit()
-                nplus_decay    = (lplus_p4.Vect().Cross(lnu_p4.Vect())).Unit()
-                sign_flip_plus =  1 if ( ((nplus_scatter.Cross(nplus_decay))*(Wplus_p4.Vect())) > 0 ) else -1
+                #print "Wplus_p4 after"
+                #Wplus_p4.Print()
 
-                try:
-                    event.tr_top_decayAngle_phi = sign_flip_plus*acos(nplus_scatter.Dot(nplus_decay))
-                except ValueError:
-                    event.tr_top_decayAngle_phi = -100
+                #Wminus_p4  = copy.deepcopy(sol.Wminus)
+                #lminus_p4  = makeP4(sol.leptonMinus.Pt(), sol.leptonMinus.Eta(),sol.leptonMinus.Phi(), 0.)
+                #lnuBar_p4  = copy.deepcopy(sol.neutrinoBar)
 
-                boost_Wplus = Wplus_p4.BoostVector()
-                lplus_p4.Boost(-boost_Wplus)
+                #Wminus_p4 .Boost(-boost_tBar)
+                #lminus_p4 .Boost(-boost_tBar)
+                #lnuBar_p4 .Boost(-boost_tBar)
 
-                try:
-                    event.tr_top_decayAngle_theta = (Wplus_p4).Angle(lplus_p4.Vect())
-                except ValueError:
-                    event.tr_top_decayAngle_theta = -100
+                #nplus_scatter  = ((beam.Vect().Unit()).Cross(Wplus_p4.Vect())).Unit()
+                #nplus_decay    = (lplus_p4.Vect().Cross(lnu_p4.Vect())).Unit()
+                #sign_flip_plus =  1 if ( ((nplus_scatter.Cross(nplus_decay))*(Wplus_p4.Vect())) > 0 ) else -1
 
-                # let's not confuse ourselves later on
-                del Wplus_p4, lplus_p4, lnu_p4 
+                #try:
+                #    event.tr_top_decayAngle_phi = sign_flip_plus*acos(nplus_scatter.Dot(nplus_decay))
+                #except ValueError:
+                #    event.tr_top_decayAngle_phi = -100
 
-                nminus_scatter  = ((beam.Vect().Unit()).Cross(Wminus_p4.Vect())).Unit()
-                nminus_decay    = (lminus_p4.Vect().Cross(lnuBar_p4.Vect())).Unit()
-                sign_flip_minus =  1 if ( ((nminus_scatter.Cross(nminus_decay))*(Wminus_p4.Vect())) > 0 ) else -1
+                #boost_Wplus = Wplus_p4.BoostVector()
+                #print "boost_Wplus"
+                #boost_Wplus.Print()
 
-                try:
-                    event.tr_topBar_decayAngle_phi = sign_flip_minus*acos(nminus_scatter.Dot(nminus_decay))
-                except ValueError:
-                    event.tr_topBar_decayAngle_phi = -100
+                #print "lplus_p4 before boost_Wplus"
+                #lplus_p4.Print()
+                #boost_Wplus.Print()
+                #lplus_p4.Boost(-boost_Wplus)
 
-                boost_Wminus = Wminus_p4.BoostVector()
-                lminus_p4.Boost(-boost_Wminus)
+                #print "lplus_p4 after boost_Wplus"
+                #lplus_p4.Print()
 
-                try:
-                    event.tr_topBar_decayAngle_theta = (Wminus_p4).Angle(lminus_p4.Vect())
-                except ValueError:
-                    event.tr_topBar_decayAngle_theta = -100
+                #try:
+                #    event.tr_top_decayAngle_theta = (Wplus_p4).Angle(lplus_p4.Vect())
+                #except ValueError:
+                #    event.tr_top_decayAngle_theta = -100
+        
+                #print "4-vec (3)"
+                #print "lplus_p4"
+                #lplus_p4.Print()
+                #print
 
-                # let's not confuse ourselves later on
-                del Wminus_p4, lminus_p4, lnuBar_p4 
+                ## let's not confuse ourselves later on
+                #del Wplus_p4, lplus_p4, lnu_p4 
+
+                #nminus_scatter  = ((beam.Vect().Unit()).Cross(Wminus_p4.Vect())).Unit()
+                #nminus_decay    = (lminus_p4.Vect().Cross(lnuBar_p4.Vect())).Unit()
+                #sign_flip_minus =  1 if ( ((nminus_scatter.Cross(nminus_decay))*(Wminus_p4.Vect())) > 0 ) else -1
+
+                #try:
+                #    event.tr_topBar_decayAngle_phi = sign_flip_minus*acos(nminus_scatter.Dot(nminus_decay))
+                #except ValueError:
+                #    event.tr_topBar_decayAngle_phi = -100
+
+                #boost_Wminus = Wminus_p4.BoostVector()
+                #lminus_p4.Boost(-boost_Wminus)
+
+                #try:
+                #    event.tr_topBar_decayAngle_theta = (Wminus_p4).Angle(lminus_p4.Vect())
+                #except ValueError:
+                #    event.tr_topBar_decayAngle_theta = -100
+
+                ## let's not confuse ourselves later on
+                #del Wminus_p4, lminus_p4, lnuBar_p4 
 
                 # Eq 4.21 Bernreuther for (k* and r*); absolute rapidity difference in the lab frame!
                 sign_star = float(np.sign(abs(sol.top.Rapidity()) - abs(sol.topBar.Rapidity())))
@@ -1402,6 +1445,8 @@ def filler( event ):
 
                 event.nonZ1_l1_index = nonZ1_tightLepton_indices[0] if len(nonZ1_tightLepton_indices)>0 else -1
                 event.nonZ1_l2_index = nonZ1_tightLepton_indices[1] if len(nonZ1_tightLepton_indices)>1 else -1
+        
+        event.overflow_counter = phasespace.overflow_counter_func()( event, None )
 
         if len(leptons)>=3:
             event.l3_pt         = leptons[2]['pt']

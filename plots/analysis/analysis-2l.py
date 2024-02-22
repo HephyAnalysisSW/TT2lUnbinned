@@ -18,6 +18,7 @@ from RootTools.core.standard             import *
 from TT2lUnbinned.Tools.user                     import plot_directory
 from TT2lUnbinned.Tools.cutInterpreter           import cutInterpreter
 from TT2lUnbinned.Tools.objectSelection          import lepString
+from TT2lUnbinned.Analysis.phasespace.default    import phasespace
 
 # Analysis
 from Analysis.Tools.helpers                      import deltaPhi, deltaR
@@ -37,8 +38,8 @@ argParser.add_argument('--ttbarComp',      action='store_true', help='Run only o
 argParser.add_argument('--noData',         action='store_true', default=True, help='Do not plot data.')
 argParser.add_argument('--no_sorting',     action='store_true', help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?')
-argParser.add_argument('--plot_directory', action='store', default='TMB_4t_v2')
-argParser.add_argument('--selection',      action='store', default='dilepL-offZ1-njet4p-btag2p-ht500')
+argParser.add_argument('--plot_directory', action='store', default='TT2lUnbinned_v2')
+argParser.add_argument('--selection',      action='store', default='tr-minDLmass20-dilepL-offZ1-njet3p-btag2p-ht500')
 argParser.add_argument('--n_cores',        action='store', type=int, default=-1)
 args = argParser.parse_args()
 
@@ -65,7 +66,10 @@ if args.ttbarComp:
     #TTLep_EFT.isEFT = True
 else: 
     mc = [ TTLep, ST, DY, TTW, TTH, TTZ] 
+    #mc = [ TTLep] 
     extra_selection = "1"
+
+preselectionString = cutInterpreter.cutString(args.selection) + "&&" + phasespace.inclusive_selection# + "&&("+phasespace.overflow_counter+"==7)"
 
 # Now we add the data
 if not args.noData:
@@ -136,6 +140,7 @@ jetVarNames     = [x.split('/')[0] for x in jetVars]
 # the following we read for both, data and simulation 
 read_variables += [
     "weight/F", "year/I", "met_pt/F", "met_phi/F", "nBTag/I", "nJetGood/I", "PV_npvsGood/I", "LHE_HT/F", "LHE_HTIncoming/F",
+    "ht/F",
     "l1_pt/F", "l1_eta/F" , "l1_phi/F", "l1_mvaTOP/F", "l1_mvaTOPWP/I", "l1_index/I", 
     "l2_pt/F", "l2_eta/F" , "l2_phi/F", "l2_mvaTOP/F", "l2_mvaTOPWP/I", "l2_index/I",
     "JetGood[%s]"%(",".join(jetVars)),
@@ -154,6 +159,9 @@ read_variables += [
     "tr_cosThetaMinus_r_star/F", "tr_cosThetaPlus_k_star/F", "tr_cosThetaMinus_k_star/F",
     "tr_xi_nn/F", "tr_xi_rr/F", "tr_xi_kk/F", "tr_xi_nr_plus/F", "tr_xi_nr_minus/F", "tr_xi_rk_plus/F", "tr_xi_rk_minus/F", "tr_xi_nk_plus/F", "tr_xi_nk_minus/F",
     "tr_cos_phi/F", "tr_cos_phi_lab/F", "tr_abs_delta_phi_ll_lab/F",
+    #"tr_top_decayAngle_phi/F", "tr_top_decayAngle_theta/F", 
+    #"tr_topBar_decayAngle_phi/F", "tr_topBar_decayAngle_theta/F",
+    "l12_pt/F", "l12_mass/F", 
 ]
 
 # the following we read only in simulation
@@ -188,10 +196,7 @@ def charge(pdgId):
 
 # We don't use tree formulas, but I leave them so you understand the syntax. TTreeFormulas are faster than if we compute things in the event loop.
 ttreeFormulas = {   
-                    #"nJetGood30":"Sum$(JetGood_pt>30)", 
-                    #"nJetGood40":"Sum$(JetGood_pt>40)", 
-                    #"nJetGood50":"Sum$(JetGood_pt>50)", 
-                    #"nJetBTag30Tight":"Sum$(nJetGood_pt>30&JetGood_isBTag_tight)", 
+                    #"overflow_counter":phasespace.overflow_counter, 
     }
 
 yields     = {}
@@ -225,7 +230,7 @@ for i_mode, mode in enumerate(allModes):
         stack = Stack(mc)
 
     # Define everything we want to have common to all plots
-    Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = "("+getLeptonSelection(mode)+")&&("+cutInterpreter.cutString(args.selection)+")&&("+extra_selection+")")
+    Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString = "("+getLeptonSelection(mode)+")&&("+preselectionString+")&&("+extra_selection+")")
 
     plots = []
 
@@ -234,6 +239,13 @@ for i_mode, mode in enumerate(allModes):
       name = 'yield', texX = '', texY = 'Number of Events',
       attribute = lambda event, sample: 0.5 + i_mode,
       binning=[3, 0, 3],
+    ))
+
+    # A special plot that shows the overflow bins 
+    plots.append(Plot(
+      name = 'overflow_counter', texX = '', texY = 'Number of Events',
+      attribute = phasespace.overflow_counter_func(), #lambda event, sample: event.overflow_counter,
+      binning=[len(phasespace.overflow_selections), 1, 1+len(phasespace.overflow_selections)],
     ))
 
     plots.append(Plot(
@@ -299,6 +311,13 @@ for i_mode, mode in enumerate(allModes):
         texX = 'MVA_{TOP}(l_{2}) WP', texY = 'Number of Events',
         attribute = lambda event, sample: event.l2_mvaTOPWP,
         binning=[5,0,5],
+    ))
+
+    plots.append(Plot(
+        texX = 'H_{T} (GeV)', texY = 'Number of Events / 100 GeV',
+        attribute = TreeVariable.fromString( "ht/F" ),
+        binning=[20,0,2000],
+        addOverFlowBin='upper',
     ))
 
     plots.append(Plot(
@@ -427,12 +446,6 @@ for i_mode, mode in enumerate(allModes):
     ))
 
     plots.append(Plot(
-      texX = 'H_{T} (GeV)', texY = 'Number of Events / 30 GeV',
-      name = 'ht', attribute = lambda event, sample: sum( j['pt'] for j in event.jets ),
-      binning=[1500/50,0,1500],
-    ))
-
-    plots.append(Plot(
       texX = 'LHE_HT (GeV)', texY = 'Number of Events / 30 GeV',
       name = 'LHE_HT', attribute = lambda event, sample: event.LHE_HT,
       binning=[1500/50,0,1500],
@@ -454,6 +467,18 @@ for i_mode, mode in enumerate(allModes):
       texX = 'p_{T}(subleading jet) (GeV)', texY = 'Number of Events / 30 GeV',
       name = 'jet1_pt', attribute = lambda event, sample: event.JetGood_pt[1],
       binning=[600/30,0,600],
+    ))
+
+    plots.append(Plot(
+      texX = 'p_{T}(l_{1+2}) (GeV)', texY = 'Number of Events',
+      name = 'l12_pt', attribute = lambda event, sample: event.l12_pt,
+      binning=[30,0,1200],
+    ))
+
+    plots.append(Plot(
+      texX = 'M(l_{1},l_{2}) (GeV)', texY = 'Number of Events',
+      name = 'l12_mass', attribute = lambda event, sample: event.l12_mass,
+      binning=[30,0,1200],
     ))
 
     plots.append(Plot(
