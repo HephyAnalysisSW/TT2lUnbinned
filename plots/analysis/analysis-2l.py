@@ -495,13 +495,13 @@ for i_mode, mode in enumerate(allModes):
 
     plots.append(Plot(
       texX = 'p_{T}(#bar{#nu}) (GeV)', texY = 'Number of Events / 30 GeV',
-      name = 'neutrinoBar_pt', attribute = lambda event, sample: event.tr_neutrino_pt,
+      name = 'neutrinoBar_pt', attribute = lambda event, sample: event.tr_neutrinoBar_pt,
       binning=[600/30,0,600],
     ))
 
     plots.append(Plot(
       texX = '#eta(#bar{#nu})', texY = 'Number of Events',
-      name = 'neutrinoBar_eta', attribute = lambda event, sample: event.tr_neutrino_eta,
+      name = 'neutrinoBar_eta', attribute = lambda event, sample: event.tr_neutrinoBar_eta,
       binning=[30,-3,3],
     ))
 

@@ -28,6 +28,12 @@ else:
 
 from Samples.Tools.config import redirector_global as redirector
 
+# DB
+from Samples.Tools.config import dbDir
+dbFile = dbDir+'/nano_mc_private_UL20.sql'
+
+logger.info("Using db file: %s", dbFile)
+
 TT01j1lCAv2Ref_HT800 = Sample.fromDirectory( "TT01j1lCAv2Ref_HT800", "/eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/nanoAOD/Run2SIM_UL2016/TT01j1lCAv2Ref_HT800", xSection=89.8, redirector = "root://eos.grid.vbc.ac.at/")
 TT01j1lCAv2Ref_HT800.reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/CA/TT01j1lCARef_HT800_reweight_card.pkl'
 TT01j1lCAv2Ref_HT800.normalization = 1639157.0
@@ -38,7 +44,13 @@ TT01j2lCAv2Ref_HT500.normalization = 1743773.0
 
 EFT_samples = [TT01j1lCAv2Ref_HT800, TT01j2lCAv2Ref_HT500]
 
-allSamples = EFT_samples
+TTLep_pow_CP5_hDown = Sample.nanoAODfromDAS("TTLep_pow_CP5_hDown","/TTTo2L2Nu_hdampDOWN_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM", dbFile=dbFile, redirector=redirector, instance="global", overwrite=ov, xSection=88.4)
+TTLep_pow_CP5_hUp = Sample.nanoAODfromDAS("TTLep_pow_CP5_hUp","/TTTo2L2Nu_hdampUP_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM", dbFile=dbFile, redirector=redirector, instance="global", overwrite=ov, xSection=88.4)
+
+syst_samples = [TTLep_pow_CP5_hDown, TTLep_pow_CP5_hUp]
+
+allSamples = EFT_samples + syst_samples
+
 
 for s in allSamples:
     s.isData = False

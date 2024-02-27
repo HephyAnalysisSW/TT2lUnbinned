@@ -597,7 +597,8 @@ if isDilep:
     new_variables += ["tr_cosThetaPlus_n/F", "tr_cosThetaMinus_n/F", "tr_cosThetaPlus_r/F", "tr_cosThetaMinus_r/F", "tr_cosThetaPlus_k/F", "tr_cosThetaMinus_k/F", 
                   "tr_cosThetaPlus_r_star/F", "tr_cosThetaMinus_r_star/F", "tr_cosThetaPlus_k_star/F", "tr_cosThetaMinus_k_star/F",
                   "tr_xi_nn/F", "tr_xi_rr/F", "tr_xi_kk/F", 
-                  "tr_xi_nr_plus/F", "tr_xi_nr_minus/F", "tr_xi_rk_plus/F", "tr_xi_rk_minus/F", "tr_xi_nk_plus/F", "tr_xi_nk_minus/F", 
+                  "tr_xi_nr_plus/F", "tr_xi_nr_minus/F", "tr_xi_rk_plus/F", "tr_xi_rk_minus/F", "tr_xi_nk_plus/F", "tr_xi_nk_minus/F",
+                  "tr_xi_r_star_k/F", "tr_xi_k_r_star/F", "tr_xi_kk_star/F",
                   "tr_cos_phi/F", "tr_cos_phi_lab/F", "tr_abs_delta_phi_ll_lab/F",
                   #"tr_top_decayAngle_phi/F", "tr_top_decayAngle_theta/F", "tr_topBar_decayAngle_phi/F", "tr_topBar_decayAngle_theta/F"
                  ] 
@@ -1377,6 +1378,9 @@ def filler( event ):
                 event.tr_xi_nk_plus = event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_k + event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_n
                 event.tr_xi_nk_minus= event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_k - event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_n
 
+                event.tr_xi_r_star_k = event.tr_cosThetaPlus_r_star*event.tr_cosThetaMinus_k
+                event.tr_xi_k_r_star = event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_r_star
+                event.tr_xi_kk_star  = event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_k_star
                 #print "l_plus unit"
                 #l_plus.Print()
                 #print "l_minus unit"
