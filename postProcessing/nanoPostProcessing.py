@@ -25,7 +25,8 @@ from TT2lUnbinned.Tools.helpers             import closestOSDLMassToMZ, deltaR, 
 from TT2lUnbinned.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGenPartsAll, getJets, genLepFromZ, getGenZs, isAnalysisJet
 from TT2lUnbinned.Tools.triggerEfficiency   import triggerEfficiency
 import TT2lUnbinned.Tools.fixTVecMul
-from TT2lUnbinned.Analysis.phasespace.default import phasespace
+from TT2lUnbinned.Analysis.phasespace.v1     import phasespace as phase_space v1
+from TT2lUnbinned.Analysis.phasespace.v2     import phasespace as phase_space v2
 
 # Analysis
 from Analysis.Tools.mvaTOPreader             import mvaTOPreader
@@ -62,7 +63,7 @@ def get_parser():
     argParser.add_argument('--flagTT',     action='store_true',                                                                        help="Is ttbar?" )
     argParser.add_argument('--flagTTbb',   action='store_true',                                                                        help="Is ttbb?" )
     argParser.add_argument('--central',    action='store_true',                                                                        help="Run on central samples?" )
-    argParser.add_argument('--btag_WP',     action='store',         nargs='?',   type=str, default='loose',                            help="Which b-tagging WP?" )
+    argParser.add_argument('--btag_WP',     action='store',         nargs='?',   type=str, default='medium',                            help="Which b-tagging WP?" )
     argParser.add_argument('--doCRReweighting',             action='store_true',                                                        help="color reconnection reweighting?")
     argParser.add_argument('--noTriggerSelection',          action='store_true',                                                        help="Do NOT apply Trigger selection to Data?" )
     #argParser.add_argument('--skipGenLepMatching',          action='store_true',                                                        help="skip matched genleps??" )
@@ -561,7 +562,7 @@ new_variables.append('JetGood[%s]'% ( ','.join(jetVars+['index/I', 'isBJet/O', '
 #    new_variables.append('JetGood[%s]'% ( ','.join(jetVars+['index/I', 'isBJet/O', 'isBJet_tight/O', 'isBJet_medium/O', 'isBJet_loose/O']) + ( ',genPt/F,nBHadrons/I,nCHadrons/I' if sample.isMC else '' )))
 
 if sample.isData: new_variables.extend( ['jsonPassed/I','isData/I'] )
-new_variables.extend( ['ht/F', 'nBTag/I', 'm3/F', 'minDLmass/F', "overflow_counter/I"] )
+new_variables.extend( ['ht/F', 'nBTag/I', 'm3/F', 'minDLmass/F', "overflow_counter_v1/I", "overflow_counter_v2/I"] )
 
 new_variables.append( 'lep[%s]'% ( ','.join(lepVars )) )
 
@@ -1450,7 +1451,8 @@ def filler( event ):
                 event.nonZ1_l1_index = nonZ1_tightLepton_indices[0] if len(nonZ1_tightLepton_indices)>0 else -1
                 event.nonZ1_l2_index = nonZ1_tightLepton_indices[1] if len(nonZ1_tightLepton_indices)>1 else -1
         
-        event.overflow_counter = phasespace.overflow_counter_func()( event, None )
+        event.overflow_counter_v1 = phasespace_v1.overflow_counter_func()( event, None )
+        event.overflow_counter_v2 = phasespace_v2.overflow_counter_func()( event, None )
 
         if len(leptons)>=3:
             event.l3_pt         = leptons[2]['pt']

@@ -483,31 +483,31 @@ for i_mode, mode in enumerate(allModes):
 
     plots.append(Plot(
       texX = 'p_{T}(#nu) (GeV)', texY = 'Number of Events / 30 GeV',
-      name = 'neutrino_pt', attribute = lambda event, sample: event.tr_neutrino_pt,
+      name = 'tr_neutrino_pt', attribute = lambda event, sample: event.tr_neutrino_pt,
       binning=[600/30,0,600],
     ))
 
     plots.append(Plot(
       texX = '#eta(#nu)', texY = 'Number of Events',
-      name = 'neutrino_eta', attribute = lambda event, sample: event.tr_neutrino_eta,
+      name = 'tr_neutrino_eta', attribute = lambda event, sample: event.tr_neutrino_eta,
       binning=[30,-3,3],
     ))
 
     plots.append(Plot(
       texX = 'p_{T}(#bar{#nu}) (GeV)', texY = 'Number of Events / 30 GeV',
-      name = 'neutrinoBar_pt', attribute = lambda event, sample: event.tr_neutrinoBar_pt,
+      name = 'tr_neutrinoBar_pt', attribute = lambda event, sample: event.tr_neutrinoBar_pt,
       binning=[600/30,0,600],
     ))
 
     plots.append(Plot(
       texX = '#eta(#bar{#nu})', texY = 'Number of Events',
-      name = 'neutrinoBar_eta', attribute = lambda event, sample: event.tr_neutrinoBar_eta,
+      name = 'tr_neutrinoBar_eta', attribute = lambda event, sample: event.tr_neutrinoBar_eta,
       binning=[30,-3,3],
     ))
 
     plots.append(Plot(
       texX = 'p_{T}(t#bar{t}) (GeV)', texY = 'Number of Events',
-      name = 'ttbar_pt', attribute = lambda event, sample: event.tr_ttbar_pt,
+      name = 'tr_ttbar_pt', attribute = lambda event, sample: event.tr_ttbar_pt,
       binning=[30,0,1200],
     ))
 
@@ -519,13 +519,13 @@ for i_mode, mode in enumerate(allModes):
 
     plots.append(Plot(
       texX = 'M(t#bar{t}) (GeV)', texY = 'Number of Events',
-      name = 'ttbar_mass', attribute = lambda event, sample: event.tr_ttbar_mass,
+      name = 'tr_ttbar_mass', attribute = lambda event, sample: event.tr_ttbar_mass,
       binning=[30,0,2400],
     ))
 
     plots.append(Plot(
       texX = 'p_{T}(t) (GeV)', texY = 'Number of Events',
-      name = 'top_pt', attribute = lambda event, sample: event.tr_top_pt,
+      name = 'tr_top_pt', attribute = lambda event, sample: event.tr_top_pt,
       binning=[30,0,1200],
     ))
 
@@ -537,13 +537,13 @@ for i_mode, mode in enumerate(allModes):
 
     plots.append(Plot(
       texX = 'M(t) (GeV)', texY = 'Number of Events',
-      name = 'top_mass', attribute = lambda event, sample: event.tr_top_mass,
+      name = 'tr_top_mass', attribute = lambda event, sample: event.tr_top_mass,
       binning=[30,130,210],
     ))
 
     plots.append(Plot(
       texX = 'p_{T}(#bar{t}) (GeV)', texY = 'Number of Events',
-      name = 'topBar_pt', attribute = lambda event, sample: event.tr_topBar_pt,
+      name = 'tr_topBar_pt', attribute = lambda event, sample: event.tr_topBar_pt,
       binning=[30,0,1200],
     ))
 
@@ -555,13 +555,13 @@ for i_mode, mode in enumerate(allModes):
 
     plots.append(Plot(
       texX = 'M(#bar{t}) (GeV)', texY = 'Number of Events',
-      name = 'topBar_mass', attribute = lambda event, sample: event.tr_topBar_mass,
+      name = 'tr_topBar_mass', attribute = lambda event, sample: event.tr_topBar_mass,
       binning=[30,130,210],
     ))
 
     plots.append(Plot(
       texX = 'p_{T}(W^{-}) (GeV)', texY = 'Number of Events',
-      name = 'Wminus_pt', attribute = lambda event, sample: event.tr_Wminus_pt,
+      name = 'tr_Wminus_pt', attribute = lambda event, sample: event.tr_Wminus_pt,
       binning=[30,0,1200],
     ))
 
@@ -573,13 +573,13 @@ for i_mode, mode in enumerate(allModes):
 
     plots.append(Plot(
       texX = 'M(W^{-}) (GeV)', texY = 'Number of Events',
-      name = 'Wminus_mass', attribute = lambda event, sample: event.tr_Wminus_mass,
+      name = 'tr_Wminus_mass', attribute = lambda event, sample: event.tr_Wminus_mass,
       binning=[30,130,210],
     ))
 
     plots.append(Plot(
       texX = 'p_{T}(W^{+}) (GeV)', texY = 'Number of Events',
-      name = 'Wplus_pt', attribute = lambda event, sample: event.tr_Wplus_pt,
+      name = 'tr_Wplus_pt', attribute = lambda event, sample: event.tr_Wplus_pt,
       binning=[30,0,1200],
     ))
 
@@ -591,7 +591,7 @@ for i_mode, mode in enumerate(allModes):
 
     plots.append(Plot(
       texX = 'M(W^{+}) (GeV)', texY = 'Number of Events',
-      name = 'Wplus_mass', attribute = lambda event, sample: event.tr_Wplus_mass,
+      name = 'tr_Wplus_mass', attribute = lambda event, sample: event.tr_Wplus_mass,
       binning=[30,130,210],
     ))
 

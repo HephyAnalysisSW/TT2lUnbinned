@@ -69,7 +69,8 @@ def getLeptonSelection( mode ):
     elif mode=="ee":   return "Sum$({mu_string})==0&&Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
     elif mode=='all':    return "Sum$({mu_string})+Sum$({ele_string})==2".format(mu_string=mu_string,ele_string=ele_string)
 
-from TT2lUnbinned.Analysis.phasespace.default    import phasespace
+#from TT2lUnbinned.Analysis.phasespace.v1    import phasespace
+from TT2lUnbinned.Analysis.phasespace.v2    import phasespace
 
 pre_selection  = "("+getLeptonSelection("all")+")&&("+cutInterpreter.cutString(args.selection)+")&&("+phasespace.inclusive_selection+")" 
 this_selection = pre_selection 

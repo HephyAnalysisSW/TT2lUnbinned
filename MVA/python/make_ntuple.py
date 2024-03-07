@@ -117,6 +117,9 @@ def filler( event ):
     # copy scalar variables
     for name, func in config.all_mva_variables.iteritems():
         setattr( event, name, func(r, sample=None) )
+        #print ( name, func(r, sample=None) )
+    #print "nJetGood", event.nJetGood, "JetGood_pt:", r.JetGood_pt[0], r.JetGood_pt[1]
+    #assert False, ""
             
     # copy vector variables
     for name, vector_var in config.mva_vector_variables.iteritems():

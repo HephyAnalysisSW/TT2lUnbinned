@@ -22,24 +22,25 @@ logger = logging.getLogger(__name__)
 
 from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
 
-jetVars          = ['pt/F', 'eta/F', 'phi/F', 'btagDeepFlavB/F', 'btagDeepFlavCvB/F', 'btagDeepFlavQG/F','index/I']
+jetVars          = ['pt/F', 'eta/F', 'phi/F', 'btagDeepFlavB/F', 'btagDeepFlavCvB/F', 'btagDeepFlavQG/F']
 
 jetVarNames      = [x.split('/')[0] for x in jetVars]
 
-lstm_jets_maxN   = 10
-lstm_jetVars     = ['pt/F', 'eta/F', 'phi/F', 'btagDeepFlavB/F', 'btagDeepFlavCvB/F', 'btagDeepFlavQG/F']#, 'puId/F', 'qgl/F', 'mass/F']
-lstm_jetVarNames = [x.split('/')[0] for x in lstm_jetVars]
+#lstm_jets_maxN   = 10
+#lstm_jetVars     = ['pt/F', 'eta/F', 'phi/F', 'btagDeepFlavB/F', 'btagDeepFlavCvB/F', 'btagDeepFlavQG/F']#, 'puId/F', 'qgl/F', 'mass/F']
+#lstm_jetVarNames = [x.split('/')[0] for x in lstm_jetVars]
 
 lepVars          = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'mvaTOP/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I']
 lepVarNames      = [x.split('/')[0] for x in lepVars]
 
 # Training variables
 read_variables = [\
-    "weight/F", "nPDF/I", "PDF[Weight/F]", "nscale/I", "scale[Weight/F]",
+    "weight/F", "nPDF/I", VectorTreeVariable.fromString( "PDF[Weight/F]", nMax=103), 
+    "nscale/I", "scale[Weight/F]",
     "nJet/I", "nBTag/I", "nJetGood/I", "nlep/I",
 
     "JetGood[%s]"%(",".join(jetVars)),
-    "Jet[%s]"%(",".join(lstm_jetVars + ['mass/F'])),
+    "Jet[%s]"%(",".join(jetVars)),
     "lep[%s]"%(",".join(lepVars)),
 
     "met_pt/F", "met_phi/F",
@@ -192,57 +193,58 @@ for var in [
     "tr_cos_phi", "tr_cos_phi_lab", "tr_abs_delta_phi_ll_lab",
     "tr_xi_r_star_k", "tr_xi_k_r_star", "tr_xi_kk_star",
 
-    "reweightTopPt/F",
-    "reweightPU/F",
-    "reweightPUUp/F",
-    "reweightPUDown/F",
-    "reweightL1Prefire/F",
-    "reweightL1PrefireUp/F",
-    "reweightL1PrefireDown/F",
-    "reweightLeptonSF/F",
-    "reweightLeptonSFUp/F",
-    "reweightLeptonSFDown/F",
-    "reweightTrigger/F",
-    "reweightTriggerUp/F",
-    "reweightTriggerDown/F",
-    "reweightLeptonTrackingSF/F",
-    "reweightBTagSF_down_hf/F",
-    "reweightBTagSF_central/F",
-    "reweightBTagSF_up_cferr1/F",
-    "reweightBTagSF_up_jes/F",
-    "reweightBTagSF_down_cferr2/F",
-    "reweightBTagSF_up_lf/F",
-    "reweightBTagSF_down_lf/F",
-    "reweightBTagSF_down_cferr1/F",
-    "reweightBTagSF_up_lfstats2/F",
-    "reweightBTagSF_up_lfstats1/F",
-    "reweightBTagSF_up_cferr2/F",
-    "reweightBTagSF_up_hfstats1/F",
-    "reweightBTagSF_up_hfstats2/F",
-    "reweightBTagSF_down_lfstats2/F",
-    "reweightBTagSF_up_hf/F",
-    "reweightBTagSF_down_lfstats1/F",
-    "reweightBTagSF_down_hfstats2/F",
-    "reweightBTagSF_down_hfstats1/F",
-    "reweightBTagSF_down_jes/F",
+    "reweightTopPt",
+    "reweightPU",
+    "reweightPUUp",
+    "reweightPUDown",
+    "reweightL1Prefire",
+    "reweightL1PrefireUp",
+    "reweightL1PrefireDown",
+    "reweightLeptonSF",
+    "reweightLeptonSFUp",
+    "reweightLeptonSFDown",
+    "reweightTrigger",
+    "reweightTriggerUp",
+    "reweightTriggerDown",
+    "reweightLeptonTrackingSF",
+    "reweightBTagSF_down_hf",
+    "reweightBTagSF_central",
+    "reweightBTagSF_up_cferr1",
+    "reweightBTagSF_up_jes",
+    "reweightBTagSF_down_cferr2",
+    "reweightBTagSF_up_lf",
+    "reweightBTagSF_down_lf",
+    "reweightBTagSF_down_cferr1",
+    "reweightBTagSF_up_lfstats2",
+    "reweightBTagSF_up_lfstats1",
+    "reweightBTagSF_up_cferr2",
+    "reweightBTagSF_up_hfstats1",
+    "reweightBTagSF_up_hfstats2",
+    "reweightBTagSF_down_lfstats2",
+    "reweightBTagSF_up_hf",
+    "reweightBTagSF_down_lfstats1",
+    "reweightBTagSF_down_hfstats2",
+    "reweightBTagSF_down_hfstats1",
+    "reweightBTagSF_down_jes",
 
 ]:
     all_mva_variables[var] = (lambda event, sample, var=var: getattr( event, var ))
 
-def lstm_jets(event, sample):
-    jets = [ getObjDict( event, 'Jet_', lstm_jetVarNames, event.JetGood_index[i] ) for i in range(int(event.nJetGood)) ]
-    #jets = filter( jet_vector_var['selector'], jets )
-    return jets
+#def lstm_jets(event, sample):
+#    jets = [ getObjDict( event, 'Jet_', lstm_jetVarNames, event.JetGood_index[i] ) for i in range(int(event.nJetGood)) ]
+#    #jets = filter( jet_vector_var['selector'], jets )
+#    return jets
 
 def PDF_Weight(event, sample):
     return  [ getObjDict( event, 'PDF_', ["Weight"], i ) for i in range(int(event.nPDF)) ]
-def sclae_Weight(event, sample):
+def scale_Weight(event, sample):
+    #print  [ getObjDict( event, 'scale_', ["Weight"], i ) for i in range(int(event.nscale)) ]
     return  [ getObjDict( event, 'scale_', ["Weight"], i ) for i in range(int(event.nscale)) ]
 
 # for the filler
 mva_vector_variables    =   {
     #"PDF":  {"name":"PDF", "vars":["Weight/F"], "varnames":["Weight"], "func": (lambda event, sample: [{'Weight':event.PDF_Weight[i]} for i in range(int(event.nPDF))]), 'maxN':103}
-    "PDF":  {"name":"PDF", "vars":["Weight/F"], "varnames":["Weight"], "func": PDF_Weight, 'maxN':103}
+    "PDF":  {"name":"PDF", "vars":["Weight/F"], "varnames":["Weight"], "func": PDF_Weight, 'maxN':103},
     "scale": {"name":"scale", "vars":["Weight/F"], "varnames":["Weight"], "func": scale_Weight, 'maxN':9}
 }
 
@@ -261,6 +263,14 @@ import TT2lUnbinned.Samples.nano_UL20_RunII_postProcessed as samples
 training_samples = [ 
     samples.TT01j2lCAv2Ref_HT500,
     samples.TTLep,
+
+    samples.ST,
+    samples.TTW,
+    samples.TTZ,
+    samples.TTH,
+    samples.DY,
+    samples.DiBoson,
+
     ]
 
 # Add weight infos
