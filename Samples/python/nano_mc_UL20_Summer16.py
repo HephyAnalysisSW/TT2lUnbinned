@@ -51,7 +51,6 @@ syst_samples = [TTLep_pow_CP5_hDown, TTLep_pow_CP5_hUp]
 
 allSamples = EFT_samples + syst_samples
 
-
 for s in allSamples:
     s.isData = False
 

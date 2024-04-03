@@ -25,8 +25,8 @@ from TT2lUnbinned.Tools.helpers             import closestOSDLMassToMZ, deltaR, 
 from TT2lUnbinned.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGenPartsAll, getJets, genLepFromZ, getGenZs, isAnalysisJet
 from TT2lUnbinned.Tools.triggerEfficiency   import triggerEfficiency
 import TT2lUnbinned.Tools.fixTVecMul
-from TT2lUnbinned.Analysis.phasespace.v1     import phasespace as phase_space v1
-from TT2lUnbinned.Analysis.phasespace.v2     import phasespace as phase_space v2
+from TT2lUnbinned.Analysis.phasespace.v1     import phasespace as phasespace_v1
+from TT2lUnbinned.Analysis.phasespace.v2     import phasespace as phasespace_v2
 
 # Analysis
 from Analysis.Tools.mvaTOPreader             import mvaTOPreader
@@ -593,16 +593,14 @@ if isDilep:
         "tr_ttbar_pt/F", "tr_ttbar_eta/F", "tr_ttbar_phi/F", "tr_ttbar_mass/F", "tr_ttbar_dAbsEta/F", "tr_ttbar_dEta/F",
         "tr_top_pt/F", "tr_top_eta/F", "tr_top_phi/F", "tr_top_mass/F", "tr_topBar_pt/F", "tr_topBar_eta/F", "tr_topBar_phi/F", "tr_topBar_mass/F", 
         "tr_Wminus_pt/F", "tr_Wminus_eta/F", "tr_Wminus_phi/F", "tr_Wminus_mass/F", "tr_Wplus_pt/F", "tr_Wplus_eta/F", "tr_Wplus_phi/F", "tr_Wplus_mass/F", 
-        ])
-
-    new_variables += ["tr_cosThetaPlus_n/F", "tr_cosThetaMinus_n/F", "tr_cosThetaPlus_r/F", "tr_cosThetaMinus_r/F", "tr_cosThetaPlus_k/F", "tr_cosThetaMinus_k/F", 
-                  "tr_cosThetaPlus_r_star/F", "tr_cosThetaMinus_r_star/F", "tr_cosThetaPlus_k_star/F", "tr_cosThetaMinus_k_star/F",
-                  "tr_xi_nn/F", "tr_xi_rr/F", "tr_xi_kk/F", 
-                  "tr_xi_nr_plus/F", "tr_xi_nr_minus/F", "tr_xi_rk_plus/F", "tr_xi_rk_minus/F", "tr_xi_nk_plus/F", "tr_xi_nk_minus/F",
-                  "tr_xi_r_star_k/F", "tr_xi_k_r_star/F", "tr_xi_kk_star/F",
-                  "tr_cos_phi/F", "tr_cos_phi_lab/F", "tr_abs_delta_phi_ll_lab/F",
-                  #"tr_top_decayAngle_phi/F", "tr_top_decayAngle_theta/F", "tr_topBar_decayAngle_phi/F", "tr_topBar_decayAngle_theta/F"
-                 ] 
+        "tr_cosThetaPlus_n/F", "tr_cosThetaMinus_n/F", "tr_cosThetaPlus_r/F", "tr_cosThetaMinus_r/F", "tr_cosThetaPlus_k/F", "tr_cosThetaMinus_k/F", 
+        "tr_cosThetaPlus_r_star/F", "tr_cosThetaMinus_r_star/F", "tr_cosThetaPlus_k_star/F", "tr_cosThetaMinus_k_star/F",
+        "tr_xi_nn/F", "tr_xi_rr/F", "tr_xi_kk/F", 
+        "tr_xi_nr_plus/F", "tr_xi_nr_minus/F", "tr_xi_rk_plus/F", "tr_xi_rk_minus/F", "tr_xi_nk_plus/F", "tr_xi_nk_minus/F",
+        "tr_xi_r_star_k/F", "tr_xi_k_r_star/F", "tr_xi_kk_star/F",
+        "tr_cos_phi/F", "tr_cos_phi_lab/F", "tr_abs_delta_phi_ll_lab/F",
+        #"tr_top_decayAngle_phi/F", "tr_top_decayAngle_theta/F", "tr_topBar_decayAngle_phi/F", "tr_topBar_decayAngle_theta/F"
+     ] 
         
 if addReweights:
 #    sample.chain.SetAlias("nLHEReweighting",       "nLHEReweightingWeight")

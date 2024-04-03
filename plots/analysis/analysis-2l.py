@@ -18,7 +18,8 @@ from RootTools.core.standard             import *
 from TT2lUnbinned.Tools.user                     import plot_directory
 from TT2lUnbinned.Tools.cutInterpreter           import cutInterpreter
 from TT2lUnbinned.Tools.objectSelection          import lepString
-from TT2lUnbinned.Analysis.phasespace.default    import phasespace
+from TT2lUnbinned.Analysis.phasespace.v1         import phasespace as phasespace_v1
+from TT2lUnbinned.Analysis.phasespace.v2         import phasespace as phasespace_v2
 
 # Analysis
 from Analysis.Tools.helpers                      import deltaPhi, deltaR
@@ -38,7 +39,7 @@ argParser.add_argument('--ttbarComp',      action='store_true', help='Run only o
 argParser.add_argument('--noData',         action='store_true', default=True, help='Do not plot data.')
 argParser.add_argument('--no_sorting',     action='store_true', help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?')
-argParser.add_argument('--plot_directory', action='store', default='TT2lUnbinned_v2')
+argParser.add_argument('--plot_directory', action='store', default='v4')
 argParser.add_argument('--selection',      action='store', default='tr-minDLmass20-dilepL-offZ1-njet3p-btag2p-ht500')
 argParser.add_argument('--n_cores',        action='store', type=int, default=-1)
 args = argParser.parse_args()
@@ -69,7 +70,7 @@ else:
     #mc = [ TTLep] 
     extra_selection = "1"
 
-preselectionString = cutInterpreter.cutString(args.selection) + "&&" + phasespace.inclusive_selection# + "&&("+phasespace.overflow_counter+"==7)"
+preselectionString = cutInterpreter.cutString(args.selection) + "&&" + phasespace_v1.inclusive_selection# + "&&("+phasespace.overflow_counter+"==7)"
 
 # Now we add the data
 if not args.noData:
@@ -243,9 +244,15 @@ for i_mode, mode in enumerate(allModes):
 
     # A special plot that shows the overflow bins 
     plots.append(Plot(
-      name = 'overflow_counter', texX = '', texY = 'Number of Events',
-      attribute = phasespace.overflow_counter_func(), #lambda event, sample: event.overflow_counter,
-      binning=[len(phasespace.overflow_selections), 1, 1+len(phasespace.overflow_selections)],
+      name = 'overflow_counter_v1', texX = '', texY = 'Number of Events',
+      attribute = phasespace_v1.overflow_counter_func(), #lambda event, sample: event.overflow_counter,
+      binning=[len(phasespace_v1.overflow_selections), 1, 1+len(phasespace_v1.overflow_selections)],
+    ))
+
+    plots.append(Plot(
+      name = 'overflow_counter_v2', texX = '', texY = 'Number of Events',
+      attribute = phasespace_v2.overflow_counter_func(), #lambda event, sample: event.overflow_counter,
+      binning=[len(phasespace_v2.overflow_selections), 1, 1+len(phasespace_v2.overflow_selections)],
     ))
 
     plots.append(Plot(

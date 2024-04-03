@@ -15,7 +15,9 @@ import TT2lUnbinned.Samples.nano_mc_UL20_Summer16_postProcessed as Summer16
 import TT2lUnbinned.Samples.nano_mc_UL20_Fall17_postProcessed as Fall17
 import TT2lUnbinned.Samples.nano_mc_UL20_Autumn18_postProcessed as Autumn18
 
-TTLep       = Sample.combine( "TTLep", [Summer16_preVFP.TTLep, Summer16.TTLep, Fall17.TTLep, Autumn18.TTLep], texName = "t#bar{t}")
+TTLep               = Sample.combine( "TTLep", [Summer16_preVFP.TTLep, Summer16.TTLep, Fall17.TTLep, Autumn18.TTLep], texName = "t#bar{t}")
+TTLep_pow_CP5_hDown = Sample.combine( "TTLep_pow_CP5_hDown", [Summer16_preVFP.TTLep_pow_CP5_hDown, Summer16.TTLep_pow_CP5_hDown, Fall17.TTLep_pow_CP5_hDown, Autumn18.TTLep_pow_CP5_hDown], texName = "t#bar{t}")
+TTLep_pow_CP5_hUp   = Sample.combine( "TTLep_pow_CP5_hUp", [Summer16_preVFP.TTLep_pow_CP5_hUp, Summer16.TTLep_pow_CP5_hUp, Fall17.TTLep_pow_CP5_hUp, Autumn18.TTLep_pow_CP5_hUp], texName = "t#bar{t}")
 ST          = Sample.combine( "ST",    [Summer16_preVFP.ST, Summer16.ST, Fall17.ST, Autumn18.ST],             texName = "t/tW")
 #TTTT        = Sample.combine( "TTTT",  [Summer16_preVFP.TTTT, Summer16.TTTT, Fall17.TTTT, Autumn18.TTTT],     texName = "t#bar{t}t#bar{t}")
 TTW         = Sample.combine( "TTW",   [Summer16_preVFP.TTW, Summer16.TTW, Fall17.TTW, Autumn18.TTW],         texName = "t#bar{t}W" )

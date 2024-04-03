@@ -33,7 +33,7 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
 argParser.add_argument('--small',          action='store_true', help='Run only on a small subset of the data?')
-argParser.add_argument('--selection',      action='store', default='tr-dilepL-offZ1-njet3p-btag2p-ht500')
+argParser.add_argument('--selection',      action='store', default='tr-dilepM-offZ1-njet3p-btagM2p-ht500')
 args = argParser.parse_args()
 
 # Logger
@@ -42,9 +42,8 @@ import RootTools.core.logger as logger_rt
 logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
-
 # Simulated samples
-from TT2lUnbinned.Samples.nano_UL20_RunII_postProcessed import *
+from TT2lUnbinned.Samples.nano_mc_UL20_Summer16_preVFP_postProcessed import *
 
 sample = TTLep
 

@@ -22,6 +22,7 @@ argParser.add_argument('--config',                    action='store', type=str)
 argParser.add_argument('--selection',                 action='store', type=str, default=None,  help="Additional training selection?")
 argParser.add_argument('--output_directory',          action='store', type=str,   default='.')
 argParser.add_argument('--small',                     action='store_true')
+argParser.add_argument('--overwrite',                 action='store_true')
 argParser.add_argument('--delphesCutInterpreter',     action='store_true', default=False, help="Use delphesCutInterpreter?")
 argParser.add_argument('--store_genWeight',           action='store_true', default=False, help="write genWeight to training sample?")
 
@@ -77,6 +78,9 @@ else:
 
 # where the output goes
 output_file  = os.path.join( args.output_directory, "MVA-training", subDir, sample.name, sample.name + ".root" )
+if os.path.exists( output_file ) and not args.overwrite:
+    print( "File %s exists. Quit."%output_file)
+    sys.exit(0)
 
 # reader
 reader = sample.treeReader( \

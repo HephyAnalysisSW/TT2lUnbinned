@@ -51,7 +51,8 @@ read_variables = [\
     "l2_eta/F",
     "l2_phi/F",
     "year/I",
-    "overflow_counter/I",
+    "overflow_counter_v1/I",
+    "overflow_counter_v2/I",
     "ht/F",
     "met_pt/F",
     "Z1_pt/F",
@@ -177,7 +178,7 @@ for var in [
     "weight",   
     "met_pt", "nJetGood", "nBTag", 
     "l1_pt", "l1_eta", "l1_phi", "l2_pt", "l2_eta", "l2_phi",
-    "year", "overflow_counter", 
+    "year", "overflow_counter_v1", "overflow_counter_v2", 
     "ht", "met_pt", "Z1_pt", "Z1_mass", "minDLmass", "l12_pt", "l12_mass",
     "tr_neutrino_pt", "tr_neutrino_eta", "tr_neutrinoBar_pt", "tr_neutrinoBar_eta",
     "tr_ttbar_pt", "tr_ttbar_eta", "tr_ttbar_mass",
@@ -263,6 +264,8 @@ import TT2lUnbinned.Samples.nano_UL20_RunII_postProcessed as samples
 training_samples = [ 
     samples.TT01j2lCAv2Ref_HT500,
     samples.TTLep,
+    samples.TTLep_pow_CP5_hUp,
+    samples.TTLep_pow_CP5_hDown,
 
     samples.ST,
     samples.TTW,
@@ -286,6 +289,7 @@ assert len(training_samples)==len(set([s.name for s in training_samples])), "tra
 
 # training selection
 
-selection = 'tr-minDLmass20-dilepL-offZ1-njet3p-btag2p-ht500'
+#selection = 'tr-minDLmass20-dilepL-offZ1-njet3p-btag2p-ht500'
+selection = 'tr-minDLmass20-dilepM-offZ1-njet3p-btagM2p-ht500'
 from TT2lUnbinned.Tools.cutInterpreter import cutInterpreter
 selectionString = cutInterpreter.cutString( selection )
