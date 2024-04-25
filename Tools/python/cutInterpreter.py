@@ -51,7 +51,7 @@ special_cuts = {
 
 
 
-continous_variables = [ ('ht','Sum$(JetGood_pt*(JetGood_pt>25&&abs(JetGood_eta)<2.4))'), ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1pt", "Z1_pt"), ("Z2pt", "Z2_pt"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT"), ("ptG", "photon_pt")]
+continous_variables = [ ('ht','Sum$(JetGood_pt*(JetGood_pt>25&&abs(JetGood_eta)<2.4))'), ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1pt", "Z1_pt"), ("Z2pt", "Z2_pt"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT"), ("ptG", "photon_pt"), ("mtt", "tr_ttbar_mass")]
 discrete_variables  = [ ("njet", "nJetGood"), ("btagM", "Sum$(JetGood_pt>25&&abs(JetGood_eta)<2.4&&JetGood_isBJet_medium)"), ("btag", "nBTag"),("nlepFO", "Sum$(lep_isFO)"), ]
 
 

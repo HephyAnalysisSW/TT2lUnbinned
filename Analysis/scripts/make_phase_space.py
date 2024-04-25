@@ -33,7 +33,7 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
 argParser.add_argument('--small',          action='store_true', help='Run only on a small subset of the data?')
-argParser.add_argument('--selection',      action='store', default='tr-dilepM-offZ1-njet3p-btagM2p-ht500')
+argParser.add_argument('--selection',      action='store', default='tr-dilepM-offZ1-njet3p-btagM2p-mtt750')
 args = argParser.parse_args()
 
 # Logger

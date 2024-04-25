@@ -22,7 +22,7 @@ hyperPoly  = HyperPoly( weightInfo.order )
 
 logger.info( "Coefficients: %i (%s), order: %i number of weights: %i", len(weightInfo.variables), ",".join(weightInfo.variables), weightInfo.order,  weightInfo.nid)
 
-max_n = 3
+max_n = 20
 
 def interpret_weight(weight_id):
     str_s = weight_id.split('_')
@@ -32,9 +32,8 @@ def interpret_weight(weight_id):
     return res
 
 # from here on miniAOD specific:
-miniAOD = FWLiteSample.fromFiles("miniAOD", ["root://cms-xrd-global.cern.ch//store/mc/RunIISummer20UL18MiniAODv2/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/30000/A2EFBE59-538E-EC43-B4FB-381853992495.root"])
-#miniAOD = FWLiteSample.fromFiles("miniAOD", ["/users/robert.schoefbeck/CMS/sampleproduction/test2/LHE.root"])
-#miniAOD = FWLiteSample.fromFiles("miniAOD", ["/eos/vbc/experiments/cms//store/user/schoef/TT01j2lCAMyRef/TT01j2lCAMyRef/240330_220243/0000/GEN_LO_0j_102X_20.root"])
+#miniAOD = FWLiteSample.fromFiles("miniAOD", ["root://cms-xrd-global.cern.ch//store/mc/RunIISummer20UL18MiniAODv2/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/30000/A2EFBE59-538E-EC43-B4FB-381853992495.root"])
+miniAOD = FWLiteSample.fromFiles("miniAOD", ["/users/robert.schoefbeck/CMS/CMSSW_10_6_27/src/Samples/crab/gen/GEN_LO_0j_102X.root"])
 logger.info("Compute parametrisation from miniAOD relying on the same sequence of weights as in the card file.")
 
 fwliteReader = miniAOD.fwliteReader( products = { 
@@ -48,36 +47,40 @@ p_C_miniAOD = []
 rw_miniAOD_debug  = [] # not needed to store base point weights
 
 while fwliteReader.run( ):
-    #gen_weights = fwliteReader.products['genInfo'].weights()
-    lhe_weights = fwliteReader.products['lhe'].weights()
-    weights      = []
-    param_points = []
-    for weight in lhe_weights:
+    gen_weights = fwliteReader.products['genInfo'].weights()
+    for w in range(16):
+        print w, gen_weights[w]
+    print
 
-        print weight.id, weight.wgt
-        # Store nominal weight (First position!) 
-        if weight.id in ['rwgt_1','dummy']: rw_nominal = weight.wgt
-        if not weight.id in weightInfo.id: continue
-        pos = weightInfo.data[weight.id]
-        weights.append( weight.wgt/rw_nominal )
-        interpreted_weight = interpret_weight(weight.id) 
-        # weight data for interpolation
-        if not hyperPoly.initialized:
-            param_points.append( tuple(interpreted_weight[var] for var in weightInfo.variables) )
-            logger.debug( "Weight %s -> base point %r. val: %f", weight.id, param_points[-1], weight.wgt ) 
+    #lhe_weights = fwliteReader.products['lhe'].weights()
+    #weights      = []
+    #param_points = []
+    #for weight in lhe_weights:
 
-    rw_miniAOD_debug.append( weights ) 
-    # Initialize with Reference Point
+    #    print weight.id, weight.wgt
+    #    # Store nominal weight (First position!) 
+    #    if weight.id in ['rwgt_1','dummy']: rw_nominal = weight.wgt
+    #    if not weight.id in weightInfo.id: continue
+    #    pos = weightInfo.data[weight.id]
+    #    weights.append( weight.wgt/rw_nominal )
+    #    interpreted_weight = interpret_weight(weight.id) 
+    #    # weight data for interpolation
+    #    if not hyperPoly.initialized:
+    #        param_points.append( tuple(interpreted_weight[var] for var in weightInfo.variables) )
+    #        logger.debug( "Weight %s -> base point %r. val: %f", weight.id, param_points[-1], weight.wgt ) 
 
-    if not hyperPoly.initialized: 
-        #print "ref point", ref_point_coordinates
-        #for i_p, p in enumerate(param_points):
-        #    print "weight", i_p, weights[i_p]/rw_nominal, p
-        hyperPoly.initialize( param_points )
-    coeff = hyperPoly.get_parametrization( weights )
-    np = hyperPoly.ndof
-    
-    p_C_miniAOD.append( [ coeff[n] for n in xrange(hyperPoly.ndof) ] )
+    #rw_miniAOD_debug.append( weights ) 
+    ## Initialize with Reference Point
+
+    #if not hyperPoly.initialized: 
+    #    #print "ref point", ref_point_coordinates
+    #    #for i_p, p in enumerate(param_points):
+    #    #    print "weight", i_p, weights[i_p]/rw_nominal, p
+    #    hyperPoly.initialize( param_points )
+    #coeff = hyperPoly.get_parametrization( weights )
+    #np = hyperPoly.ndof
+    #
+    #p_C_miniAOD.append( [ coeff[n] for n in xrange(hyperPoly.ndof) ] )
 
     counter+=1
     if counter>=max_n:

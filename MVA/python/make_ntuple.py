@@ -49,7 +49,7 @@ for sample in config.training_samples:
         break # found it
     else:
         sample_names.append( sample.name )
-      
+
 if not found:
     logger.error( "Need sample to be one of %s, got %s", ",".join( sample_names ), args.sample )
     sys.exit()
@@ -64,7 +64,7 @@ if args.small:
     subDir += '_small'
 
 if args.selection is not None:
-    from TT2lUnbinned.Tools.cutInterpreter import cutInterpreter
+    from TT2lUnbinned.Tools.delphesCutInterpreter import cutInterpreter
     custom_sel = cutInterpreter.cutString( args.selection)
     sample.addSelectionString( custom_sel )
     logger.info( "Add selectionstring %s", custom_sel )
@@ -137,6 +137,10 @@ def filler( event ):
         event.np = len(sample.weightInfo.combinations)
         for i_w in range(len(sample.weightInfo.combinations)):
             event.p_C[i_w] = r.p_C[i_w]
+    if hasattr( sample, "extra_variables" ):
+        for name_ in sample.extra_variables:
+            name = name_.split('/')[0]
+            setattr( event, name, getattr(r, name) )
     
 # Create a maker. Maker class will be compiled.
 
@@ -151,8 +155,9 @@ outputfile = ROOT.TFile.Open(output_file, 'recreate')
 outputfile.cd()
 maker = TreeMaker(
     sequence  = [ filler ],
-    variables = map(lambda v: TreeVariable.fromString(v) if type(v)==type("") else v,
-                mva_variables ),
+    variables =   map(lambda v: TreeVariable.fromString(v) if type(v)==type("") else v, mva_variables ) 
+                + map(lambda v: TreeVariable.fromString(v) if type(v)==type("") else v,
+                      sample.extra_variables if hasattr( sample, "extra_variables" ) else [] ),
     treeName = "Events"
     )
 

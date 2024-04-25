@@ -4,6 +4,10 @@
 max_lepton_abseta = 2.5
 max_jet_abseta = 2.5
 
+jet_string = "(recoJet_pt>30 && abs(recoJet_eta)<%f)" % max_jet_abseta
+mu_string  = "(recoLep_pt>10 && abs(recoLep_eta)<%f && abs(recoLep_pdgId)==13)" % max_lepton_abseta
+ele_string = "(recoLep_pt>10 && abs(recoLep_eta)<%f && abs(recoLep_pdgId)==11)" % max_lepton_abseta
+
 def isGoodRecoLepton( l ):
     return l['pt'] > 10 and abs( l['eta'] ) < max_lepton_abseta and abs( int(l['pdgId']) ) in [11,13] #eta < 2.5
 

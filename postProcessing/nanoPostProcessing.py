@@ -27,6 +27,7 @@ from TT2lUnbinned.Tools.triggerEfficiency   import triggerEfficiency
 import TT2lUnbinned.Tools.fixTVecMul
 from TT2lUnbinned.Analysis.phasespace.v1     import phasespace as phasespace_v1
 from TT2lUnbinned.Analysis.phasespace.v2     import phasespace as phasespace_v2
+from TT2lUnbinned.Analysis.phasespace.v3     import phasespace as phasespace_v3
 
 # Analysis
 from Analysis.Tools.mvaTOPreader             import mvaTOPreader
@@ -80,6 +81,7 @@ def get_parser():
     argParser.add_argument('--event',                       action='store',     type=int, default=-1,                                   help="Just process event no")
     argParser.add_argument('--pogEleId',                    action='store',               default=None,                                 help="Change electron selection to POG lepton IDs")
     argParser.add_argument('--pogMuId',                     action='store',               default=None,                                 help="Change muon selection to POG lepton IDs")
+    argParser.add_argument('--sigmaJEC',   action='store',         nargs='?',   type=float, default=1,                                 help="How many sigmas to vary JEC? (Don't use)" )
     return argParser
 
 options = get_parser().parse_args()
@@ -249,7 +251,12 @@ if options.LHEHTCut>0:
 
 ################################################################################
 # Final output directory
-storage_directory = os.path.join( options.targetDir, options.processingEra, options.era, options.skim, sample.name )
+
+if options.sigmaJEC!=1:
+    postfix = "_JEC"+(str(options.sigmaJEC).replace('.', 'p'))
+else:
+    postfix = ""
+storage_directory = os.path.join( options.targetDir, options.processingEra+postfix, options.era, options.skim, sample.name )
 try:    #Avoid trouble with race conditions in multithreading
     os.makedirs(storage_directory)
     logger.info( "Created output directory %s.", storage_directory )
@@ -321,15 +328,16 @@ except:
 filename, ext = os.path.splitext( os.path.join(tmp_output_directory, sample.name + '.root') )
 outfilename   = filename+ext
 
+storage_outfilename = os.path.join( storage_directory,  sample.name + '.root' )
 if not options.overwrite:
-    if os.path.isfile(outfilename):
-        logger.info( "Output file %s found.", outfilename)
-        if checkRootFile( outfilename, checkForObjects=["Events"] ) and deepCheckRootFile( outfilename ) and deepCheckWeight( outfilename ):
+    if os.path.isfile(storage_outfilename):
+        logger.info( "Output file %s found.", storage_outfilename)
+        if checkRootFile( storage_outfilename, checkForObjects=["Events"] ) and deepCheckRootFile( storage_outfilename ) and deepCheckWeight( storage_outfilename ):
             logger.info( "File already processed. Source: File check ok! Skipping." ) # Everything is fine, no overwriting
             sys.exit(0)
         else:
             logger.info( "File corrupt. Removing file from target." )
-            os.remove( outfilename )
+            os.remove( storage_outfilename )
             logger.info( "Reprocessing." )
     else:
         logger.info( "Sample not processed yet." )
@@ -410,8 +418,7 @@ else:
 # branches to be kept for data and MC
 branchKeepStrings_DATAMC = [\
     "run", "luminosityBlock", "event", "fixedGridRhoFastjetAll", "PV_npvs", "PV_npvsGood",
-    "MET_*",
-    "CaloMET_*",
+    "MET_T1_pt_*", "MET_T1_phi_*",
     "RawMET_phi", "RawMET_pt", "RawMET_sumEt",
     "Flag_*",
     "nJet", "Jet_*",
@@ -421,7 +428,6 @@ branchKeepStrings_DATAMC = [\
 ]
 branchKeepStrings_DATAMC += ["HLT_*", "PV_*"]
 
-# NOT FOR UL?
 if options.era == "2017":
     branchKeepStrings_DATAMC += [ "METFixEE2017_*" ]
 
@@ -471,21 +477,21 @@ jesUncertainties = [
     "AbsoluteStat",
     "RelativeBal",
     "RelativeFSR",
-    "RelativeJEREC1",
-    "RelativeJEREC2",
-    "RelativeJERHF",
+    #"RelativeJEREC1",
+    #"RelativeJEREC2",
+    #"RelativeJERHF",
     "RelativePtBB",
-    "RelativePtEC1",
-    "RelativePtEC2",
-    "RelativePtHF",
-    "RelativeStatEC",
+    #"RelativePtEC1",
+    #"RelativePtEC2",
+    #"RelativePtHF",
+    #"RelativeStatEC",
     "RelativeStatFSR",
-    "RelativeStatHF",
+    #"RelativeStatHF",
     "PileUpDataMC",
     "PileUpPtBB",
-    "PileUpPtEC1",
-    "PileUpPtEC2",
-    "PileUpPtHF",
+    #"PileUpPtEC1",
+    #"PileUpPtEC2",
+    #"PileUpPtHF",
     "PileUpPtRef",
     "FlavorQCD",
     "Fragmentation",
@@ -510,11 +516,12 @@ genLepVarNames  = [x.split('/')[0] for x in genLepVars]
 lepVars         = ['pt/F','eta/F','phi/F','pdgId/I','cutBased/I','miniPFRelIso_all/F','pfRelIso03_all/F','mvaFall17V2Iso_WP90/O', 'mvaTTH/F', 'sip3d/F','lostHits/I','convVeto/I','dxy/F','dz/F','charge/I','deltaEtaSC/F','mediumId/I','eleIndex/I','muIndex/I','ptCone/F','mvaTOP/F','mvaTOPWP/I','mvaTOPv2/F','mvaTOPv2WP/I','jetRelIso/F','jetBTag/F','jetPtRatio/F','jetNDauCharged/I','isFO/O','isTight/O','mvaFall17V2noIso_WPL/O','jetIdx/I']
 lepVarNames     = [x.split('/')[0] for x in lepVars]
 
-read_variables = map(TreeVariable.fromString, [ 'MET_pt/F', 'MET_phi/F', 'run/I', 'luminosityBlock/I', 'event/l', 'PV_npvs/I', 'PV_npvsGood/I'] )
+read_variables = map(TreeVariable.fromString, [ 'MET_T1_pt/F', 'MET_T1_phi/F', 'run/I', 'luminosityBlock/I', 'event/l', 'PV_npvs/I', 'PV_npvsGood/I'] )
 if options.era == "2017":
     read_variables += map(TreeVariable.fromString, [ 'METFixEE2017_pt/F', 'METFixEE2017_phi/F', 'METFixEE2017_pt_nom/F', 'METFixEE2017_phi_nom/F'])
     if sample.isMC:
         read_variables += map(TreeVariable.fromString, [ 'METFixEE2017_pt_jesTotalUp/F', 'METFixEE2017_pt_jesTotalDown/F', 'METFixEE2017_pt_jerUp/F', 'METFixEE2017_pt_jerDown/F', 'METFixEE2017_pt_unclustEnDown/F', 'METFixEE2017_pt_unclustEnUp/F', 'METFixEE2017_phi_jesTotalUp/F', 'METFixEE2017_phi_jesTotalDown/F', 'METFixEE2017_phi_jerUp/F', 'METFixEE2017_phi_jerDown/F', 'METFixEE2017_phi_unclustEnDown/F', 'METFixEE2017_phi_unclustEnUp/F', 'METFixEE2017_pt_jer/F', 'METFixEE2017_phi_jer/F'])
+
 if sample.isMC:
     read_variables += map(TreeVariable.fromString, [ 'GenMET_pt/F', 'GenMET_phi/F' , 'genTtbarId/I'])
 
@@ -562,7 +569,7 @@ new_variables.append('JetGood[%s]'% ( ','.join(jetVars+['index/I', 'isBJet/O', '
 #    new_variables.append('JetGood[%s]'% ( ','.join(jetVars+['index/I', 'isBJet/O', 'isBJet_tight/O', 'isBJet_medium/O', 'isBJet_loose/O']) + ( ',genPt/F,nBHadrons/I,nCHadrons/I' if sample.isMC else '' )))
 
 if sample.isData: new_variables.extend( ['jsonPassed/I','isData/I'] )
-new_variables.extend( ['ht/F', 'nBTag/I', 'm3/F', 'minDLmass/F', "overflow_counter_v1/I", "overflow_counter_v2/I"] )
+new_variables.extend( ['ht/F', 'nBTag/I', 'm3/F', 'minDLmass/F', "overflow_counter_v1/I", "overflow_counter_v2/I", "overflow_counter_v3/I"] )
 
 new_variables.append( 'lep[%s]'% ( ','.join(lepVars )) )
 
@@ -586,7 +593,7 @@ if isDilep:
             'reweightLeptonTrackingSF/F', 'l12_pt/F', 'l12_mass/F',
          ] )
 
-    new_variables.extend( [
+    tr_variables = [
         "tr_jetB_index/I", "tr_jetBbar_index/I", "tr_ntags/I",
         "tr_neutrino_pt/F", "tr_neutrino_eta/F", "tr_neutrino_phi/F", "tr_neutrino_mass/F", 
         "tr_neutrinoBar_pt/F", "tr_neutrinoBar_eta/F", "tr_neutrinoBar_phi/F", "tr_neutrinoBar_mass/F", 
@@ -601,6 +608,7 @@ if isDilep:
         "tr_cos_phi/F", "tr_cos_phi_lab/F", "tr_abs_delta_phi_ll_lab/F",
         #"tr_top_decayAngle_phi/F", "tr_top_decayAngle_theta/F", "tr_topBar_decayAngle_phi/F", "tr_topBar_decayAngle_theta/F"
      ] 
+    new_variables.extend( tr_variables )
         
 if addReweights:
 #    sample.chain.SetAlias("nLHEReweighting",       "nLHEReweightingWeight")
@@ -623,6 +631,9 @@ if addSystematicVariations:
         for upOrDown in ["Up", "Down"]:
             var = "jes"+var_+upOrDown
             new_variables.extend( ['nJetGood_'+var+'/I', 'nBTag_'+var+'/I', 'ht_'+var+'/F'] )
+            if isDilep:
+                new_variables.extend( [var__.replace('/', '_'+var+'/') for var__ in tr_variables] ) 
+            read_variables.extend( ['MET_T1_pt_'+var+'/F', 'MET_T1_phi_'+var+'/F'] )
 
     bTagVariations = {'central':1., 'up_jes':1., 'down_jes':1., 'up_lf':1.,
                  'down_lf':1., 'up_hfstats1':1., 'down_hfstats1':1.,
@@ -654,7 +665,6 @@ if not options.skipNanoTools:
 
     # Import MET/JEC/JER Tools
     from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetHelperRun2 import *
-
     METBranchName = 'MET' if not options.era == "2017" else 'METFixEE2017'
 
     # check if files are available (e.g. if dpm is broken this should result in an error)
@@ -691,7 +701,8 @@ if not options.skipNanoTools:
             jetType     = "AK4PFchs",
             metBranchName = METBranchName,
             isFastSim   = False,
-            applySmearing = False
+            applySmearing = False,
+            sigma       = options.sigmaJEC,
             )
 
         modules = [ JMECorrector() ]
@@ -796,7 +807,7 @@ def filler( event ):
     ################################################################################
     # PU reweighting
     if sample.isMC and hasattr(r, "Pileup_nTrueInt"):
-        from Analysis.Tools.puWeightsUL			import getPUReweight
+        from Analysis.Tools.puWeightsUL            import getPUReweight
         event.reweightPU     = getPUReweight( r.Pileup_nTrueInt, year=options.era, weight="nominal")
         event.reweightPUDown = getPUReweight( r.Pileup_nTrueInt, year=options.era, weight="down" )
         event.reweightPUUp   = getPUReweight( r.Pileup_nTrueInt, year=options.era, weight="up" )
@@ -804,7 +815,7 @@ def filler( event ):
     ################################################################################
     # top pt reweighting
     if sample.isMC:
-        event.reweightTopPt     = topPtReweightingFunc(getTopPtsForReweighting(r)) * topScaleF if doTopPtReweighting else 1.
+        event.reweightTopPt = topPtReweightingFunc(getTopPtsForReweighting(r)) * topScaleF if doTopPtReweighting else 1.
 
     ################################################################################
     ## Trigger Decision
@@ -814,35 +825,35 @@ def filler( event ):
     # Store Scale, PDF, and PS weights in a format that is readable with HEPHY framework
     if sample.isMC:
 
-    	scale_weights = [reader.sample.chain.GetLeaf("LHEScaleWeight").GetValue(i_weight) for i_weight in range(r.nLHEScaleWeight)]
-    	for i,w in enumerate(scale_weights): 
-	    if options.normalizeSys:
-	    	event.scale_Weight[i] = w/scale_norm_histo.GetBinContent( i+1 )
-		#print len(scale_norm_histo)
-	    else:
-	        event.scale_Weight[i] = 1.0
-	    #print "scale thing:",event.scale_Weight[i]
+        scale_weights = [reader.sample.chain.GetLeaf("LHEScaleWeight").GetValue(i_weight) for i_weight in range(r.nLHEScaleWeight)]
+        for i,w in enumerate(scale_weights): 
+            if options.normalizeSys:
+                event.scale_Weight[i] = w/scale_norm_histo.GetBinContent( i+1 )
+                #print len(scale_norm_histo)
+            else:
+                event.scale_Weight[i] = 1.0
+                #print "scale thing:",event.scale_Weight[i]
         event.nscale = r.nLHEScaleWeight
 
         pdf_weights = [reader.sample.chain.GetLeaf("LHEPdfWeight").GetValue(i_weight) for i_weight in range(r.nLHEPdfWeight-1)]
-	#print len(pdf_weights)
+        #print len(pdf_weights)
         for i,w in enumerate(pdf_weights):
-	    if options.normalizeSys:
-		#print len(pdf_norm_histo)
-            	event.PDF_Weight[i] = w/pdf_norm_histo[i+1]
+            if options.normalizeSys:
+                #print len(pdf_norm_histo)
+                event.PDF_Weight[i] = w/pdf_norm_histo[i+1]
             else:
-		event.PDF_Weight[i] = 1.0
-	    #print "PDF thing:",i,event.PDF_Weight[i]
-	    event.nPDF = r.nLHEPdfWeight
+                event.PDF_Weight[i] = 1.0
+                #print "PDF thing:",i,event.PDF_Weight[i]
+        event.nPDF = r.nLHEPdfWeight
 
         ps_weights = [reader.sample.chain.GetLeaf("PSWeight").GetValue(i_weight) for i_weight in range(r.nPSWeight)]
         for i,w in enumerate(ps_weights):
-	    #print len(ps_norm_histo)
-	    if options.normalizeSys:
-            	event.PS_Weight[i] = w/ps_norm_histo[i+1]
-	    else:
-		event.PS_Weight[i] = 1.0
-	    #print "PS thing:",event.PS_Weight[i] 
+            #print len(ps_norm_histo)
+            if options.normalizeSys:
+                event.PS_Weight[i] = w/ps_norm_histo[i+1]
+            else:
+                event.PS_Weight[i] = 1.0
+                #print "PS thing:",event.PS_Weight[i] 
         event.nPS = r.nPSWeight
    
     ################################################################################
@@ -948,7 +959,6 @@ def filler( event ):
     for iLep, lep in enumerate(leptons):
         lep['index'] = iLep
 
-
     #SPOSTA QUESTA PARTE PRIMA DELLA SELEZIONE DI ANALYSISJETS
     # Now create cleaned jets, b jets, ...
     jets, unclean_jets = cleanJetsAndLeptons( analysis_jets, [l for l in leptons if l['isFO']] )
@@ -971,8 +981,8 @@ def filler( event ):
         event.met_pt    = r.METFixEE2017_pt_nom
         event.met_phi   = r.METFixEE2017_phi_nom
     else:
-        event.met_pt    = r.MET_pt
-        event.met_phi   = r.MET_phi
+        event.met_pt    = r.MET_T1_pt
+        event.met_phi   = r.MET_T1_phi
 
     # Filling jets (satisfying the nomianl pt cut)
     maxNJet = 100
@@ -1112,153 +1122,71 @@ def filler( event ):
             event.l12_pt  = l12.Pt()
             event.l12_mass= l12.M()
 
-            sol = topReco.evaluate( leptons = [{'pt':event.l1_pt, 'eta':event.l1_eta, 'phi':event.l1_phi, 'pdgId':event.l1_pdgId},
+            tr_sol = topReco.evaluate( leptons = [{'pt':event.l1_pt, 'eta':event.l1_eta, 'phi':event.l1_phi, 'pdgId':event.l1_pdgId},
                                                {'pt':event.l2_pt, 'eta':event.l2_eta, 'phi':event.l2_phi, 'pdgId':event.l2_pdgId},],
                                     jets    = jets,
                                     met     = {'pt':event.met_pt, 'phi':event.met_phi} )
-            if sol:
-                event.tr_jetB_index    = sol.jetB_index
-                event.tr_jetBbar_index = sol.jetBbar_index
-                event.tr_ntags         = sol.ntags
+            tr_sol_sys = {}
+            if addSystematicVariations:
+                for var_ in jesUncertainties: # don't use 'jer' as of now
+                    for upOrDown in ["Up", "Down"]:
+                        #corrFactor = 'corr_JER' if var == 'jer' else None
+                        sys_postfix = "_jes"+var_+upOrDown
+                        tr_sol_sys[sys_postfix] = topReco.evaluate( 
+                            leptons = [{'pt':event.l1_pt, 'eta':event.l1_eta, 'phi':event.l1_phi, 'pdgId':event.l1_pdgId},
+                                       {'pt':event.l2_pt, 'eta':event.l2_eta, 'phi':event.l2_phi, 'pdgId':event.l2_pdgId},],
+                            jets    = jets,
+                            met     = {'pt':getattr( r, "MET_T1_pt"+sys_postfix), 'phi':getattr( r, "MET_T1_phi"+sys_postfix)},
+                            sys_postfix=sys_postfix)
+                    
+            for postfix, sol in [("", tr_sol)] + list( tr_sol_sys.items()):
+                if not sol: continue 
+                setattr( event, "tr_jetB_index"+postfix,    sol.jetB_index )
+                setattr( event, "tr_jetBbar_index"+postfix, sol.jetBbar_index )
+                setattr( event, "tr_ntags"+postfix, sol.ntags )
 
-                event.tr_neutrino_pt   = sol.neutrino.Pt()
-                event.tr_neutrino_eta  = sol.neutrino.Eta()
-                event.tr_neutrino_phi  = sol.neutrino.Phi()
-                event.tr_neutrino_mass = sol.neutrino.M()
+                setattr( event, "tr_neutrino_pt"+postfix, sol.neutrino.Pt() )
+                setattr( event, "tr_neutrino_eta"+postfix, sol.neutrino.Eta() )
+                setattr( event, "tr_neutrino_phi"+postfix, sol.neutrino.Phi() )
+                setattr( event, "tr_neutrino_mass"+postfix, sol.neutrino.M() )
 
-                event.tr_neutrinoBar_pt   = sol.neutrinoBar.Pt()
-                event.tr_neutrinoBar_eta  = sol.neutrinoBar.Eta()
-                event.tr_neutrinoBar_phi  = sol.neutrinoBar.Phi()
-                event.tr_neutrinoBar_mass = sol.neutrinoBar.M()
+                setattr( event, "tr_neutrinoBar_pt"+postfix, sol.neutrinoBar.Pt() )
+                setattr( event, "tr_neutrinoBar_eta"+postfix, sol.neutrinoBar.Eta() )
+                setattr( event, "tr_neutrinoBar_phi"+postfix, sol.neutrinoBar.Phi() )
+                setattr( event, "tr_neutrinoBar_mass"+postfix, sol.neutrinoBar.M() )
 
-                event.tr_ttbar_pt   = sol.ttbar.Pt()
-                event.tr_ttbar_eta  = sol.ttbar.Eta()
-                event.tr_ttbar_phi  = sol.ttbar.Phi()
-                event.tr_ttbar_mass = sol.ttbar.M()
+                setattr( event, "tr_ttbar_pt"+postfix, sol.ttbar.Pt() )
+                setattr( event, "tr_ttbar_eta"+postfix, sol.ttbar.Eta() )
+                setattr( event, "tr_ttbar_phi"+postfix, sol.ttbar.Phi() )
+                setattr( event, "tr_ttbar_mass"+postfix, sol.ttbar.M() )
 
-                event.tr_top_pt   = sol.top.Pt()
-                event.tr_top_eta  = sol.top.Eta()
-                event.tr_top_phi  = sol.top.Phi()
-                event.tr_top_mass = sol.top.M()
+                setattr( event, "tr_top_pt"+postfix, sol.top.Pt() )
+                setattr( event, "tr_top_eta"+postfix, sol.top.Eta() )
+                setattr( event, "tr_top_phi"+postfix, sol.top.Phi() )
+                setattr( event, "tr_top_mass"+postfix, sol.top.M() )
 
-                event.tr_topBar_pt   = sol.topBar.Pt()
-                event.tr_topBar_eta  = sol.topBar.Eta()
-                event.tr_topBar_phi  = sol.topBar.Phi()
-                event.tr_topBar_mass = sol.topBar.M()
+                setattr( event, "tr_topBar_pt"+postfix, sol.topBar.Pt() )
+                setattr( event, "tr_topBar_eta"+postfix, sol.topBar.Eta() )
+                setattr( event, "tr_topBar_phi"+postfix, sol.topBar.Phi() )
+                setattr( event, "tr_topBar_mass"+postfix, sol.topBar.M() )
 
-                event.tr_ttbar_dEta    = event.tr_top_eta - event.tr_topBar_eta
-                event.tr_ttbar_dAbsEta = abs(event.tr_top_eta) - abs(event.tr_topBar_eta)
+                setattr( event, "tr_ttbar_dEta"+postfix, sol.top.Eta() - sol.topBar.Eta() )
+                setattr( event, "tr_ttbar_dAbsEta"+postfix, abs(sol.top.Eta()) - abs(sol.topBar.Eta()) )
 
-                event.tr_Wminus_pt   = sol.Wminus.Pt()
-                event.tr_Wminus_eta  = sol.Wminus.Eta()
-                event.tr_Wminus_phi  = sol.Wminus.Phi()
-                event.tr_Wminus_mass = sol.Wminus.M()
+                setattr( event, "tr_Wminus_pt"+postfix, sol.Wminus.Pt() )
+                setattr( event, "tr_Wminus_eta"+postfix, sol.Wminus.Eta() )
+                setattr( event, "tr_Wminus_phi"+postfix, sol.Wminus.Phi() )
+                setattr( event, "tr_Wminus_mass"+postfix, sol.Wminus.M() )
 
-                event.tr_Wplus_pt   = sol.Wplus.Pt()
-                event.tr_Wplus_eta  = sol.Wplus.Eta()
-                event.tr_Wplus_phi  = sol.Wplus.Phi()
-                event.tr_Wplus_mass = sol.Wplus.M()
-
-                ## compute theta and phi (Suman approved)
-                #beam = ROOT.TLorentzVector()
-                #beam.SetPxPyPzE(0,0,6500,6500)
-
-                #boost_t    = sol.top.BoostVector() 
-                #boost_tBar = sol.topBar.BoostVector() 
-
-                ## copy the vectors, originals will still be needed
-                #Wplus_p4  = copy.deepcopy(sol.Wplus)
-                #lplus_p4  = makeP4(sol.leptonPlus.Pt(), sol.leptonPlus.Eta(),sol.leptonPlus.Phi(), 0.)
-                #lnu_p4    = copy.deepcopy(sol.neutrino)
-
-                #print "sol.top"
-                #sol.top.Print()
-                #print "sol.topBar"
-                #sol.topBar.Print()
-
-                #print "boost_t"
-                #boost_t.Print()
-                #print "boost_tBar"
-                #boost_tBar.Print()
-
-                #print "Wplus_p4 before"
-                #Wplus_p4.Print()
-                #
-                #Wplus_p4 .Boost(-boost_t)
-                #lplus_p4 .Boost(-boost_t)
-                #lnu_p4   .Boost(-boost_t)
-
-                #print "Wplus_p4 after"
-                #Wplus_p4.Print()
-
-                #Wminus_p4  = copy.deepcopy(sol.Wminus)
-                #lminus_p4  = makeP4(sol.leptonMinus.Pt(), sol.leptonMinus.Eta(),sol.leptonMinus.Phi(), 0.)
-                #lnuBar_p4  = copy.deepcopy(sol.neutrinoBar)
-
-                #Wminus_p4 .Boost(-boost_tBar)
-                #lminus_p4 .Boost(-boost_tBar)
-                #lnuBar_p4 .Boost(-boost_tBar)
-
-                #nplus_scatter  = ((beam.Vect().Unit()).Cross(Wplus_p4.Vect())).Unit()
-                #nplus_decay    = (lplus_p4.Vect().Cross(lnu_p4.Vect())).Unit()
-                #sign_flip_plus =  1 if ( ((nplus_scatter.Cross(nplus_decay))*(Wplus_p4.Vect())) > 0 ) else -1
-
-                #try:
-                #    event.tr_top_decayAngle_phi = sign_flip_plus*acos(nplus_scatter.Dot(nplus_decay))
-                #except ValueError:
-                #    event.tr_top_decayAngle_phi = -100
-
-                #boost_Wplus = Wplus_p4.BoostVector()
-                #print "boost_Wplus"
-                #boost_Wplus.Print()
-
-                #print "lplus_p4 before boost_Wplus"
-                #lplus_p4.Print()
-                #boost_Wplus.Print()
-                #lplus_p4.Boost(-boost_Wplus)
-
-                #print "lplus_p4 after boost_Wplus"
-                #lplus_p4.Print()
-
-                #try:
-                #    event.tr_top_decayAngle_theta = (Wplus_p4).Angle(lplus_p4.Vect())
-                #except ValueError:
-                #    event.tr_top_decayAngle_theta = -100
-        
-                #print "4-vec (3)"
-                #print "lplus_p4"
-                #lplus_p4.Print()
-                #print
-
-                ## let's not confuse ourselves later on
-                #del Wplus_p4, lplus_p4, lnu_p4 
-
-                #nminus_scatter  = ((beam.Vect().Unit()).Cross(Wminus_p4.Vect())).Unit()
-                #nminus_decay    = (lminus_p4.Vect().Cross(lnuBar_p4.Vect())).Unit()
-                #sign_flip_minus =  1 if ( ((nminus_scatter.Cross(nminus_decay))*(Wminus_p4.Vect())) > 0 ) else -1
-
-                #try:
-                #    event.tr_topBar_decayAngle_phi = sign_flip_minus*acos(nminus_scatter.Dot(nminus_decay))
-                #except ValueError:
-                #    event.tr_topBar_decayAngle_phi = -100
-
-                #boost_Wminus = Wminus_p4.BoostVector()
-                #lminus_p4.Boost(-boost_Wminus)
-
-                #try:
-                #    event.tr_topBar_decayAngle_theta = (Wminus_p4).Angle(lminus_p4.Vect())
-                #except ValueError:
-                #    event.tr_topBar_decayAngle_theta = -100
-
-                ## let's not confuse ourselves later on
-                #del Wminus_p4, lminus_p4, lnuBar_p4 
+                setattr( event, "tr_Wplus_pt"+postfix, sol.Wplus.Pt() )
+                setattr( event, "tr_Wplus_eta"+postfix, sol.Wplus.Eta() )
+                setattr( event, "tr_Wplus_phi"+postfix, sol.Wplus.Phi() )
+                setattr( event, "tr_Wplus_mass"+postfix, sol.Wplus.M() )
 
                 # Eq 4.21 Bernreuther for (k* and r*); absolute rapidity difference in the lab frame!
                 sign_star = float(np.sign(abs(sol.top.Rapidity()) - abs(sol.topBar.Rapidity())))
 
                 boost_tt =  sol.ttbar.BoostVector()
-
-                #print "sol.top.Rapidity()", sol.top.Rapidity(),"sol.topBar.Rapidity()",sol.topBar.Rapidity()
 
                 p4_top      = copy.deepcopy(sol.top)
                 p4_antitop  = copy.deepcopy(sol.topBar)
@@ -1270,8 +1198,8 @@ def filler( event ):
                 #sign_charge = -1 if  lepTop_parton['pdgId']==-6 else +1 # the l- in Bernreuther has a - for each axis. So we add a - to the axis if our lepton is negatively charged (coming from anti-top)
 
                 # lab frame cosine of lepton unit vectors (TOP-18-006 Table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf)
-                event.tr_cos_phi_lab          = p4_l_minus.Vect().Unit().Dot(p4_l_plus.Vect().Unit())
-                event.tr_abs_delta_phi_ll_lab = abs( deltaPhi( p4_l_minus.Phi(), p4_l_plus.Phi() ) )
+                setattr( event, "tr_cos_phi_lab"+postfix          , p4_l_minus.Vect().Unit().Dot(p4_l_plus.Vect().Unit()) )
+                setattr( event, "tr_abs_delta_phi_ll_lab"+postfix , abs( deltaPhi( p4_l_minus.Phi(), p4_l_plus.Phi() ) ) )
                 #print ("cos_phi_lab", cos_phi_lab, "abs_delta_phi_ll_lab", abs_delta_phi_ll_lab)
                 #print "Before Boost into ttbar system"
                 #print "top"
@@ -1339,17 +1267,28 @@ def filler( event ):
                 #if sign_star==0: raise RuntimeError
  
                 # Bernreuther Eq. 4.7
-                event.tr_cosThetaPlus_n  = n_a.Dot(l_plus)
-                event.tr_cosThetaMinus_n =-n_a.Dot(l_minus)
-                event.tr_cosThetaPlus_r  = r_a.Dot(l_plus)
-                event.tr_cosThetaMinus_r =-r_a.Dot(l_minus)
-                event.tr_cosThetaPlus_k  = k_a.Dot(l_plus)
-                event.tr_cosThetaMinus_k =-k_a.Dot(l_minus)
+                tr_cosThetaPlus_n  = n_a.Dot(l_plus)
+                tr_cosThetaMinus_n =-n_a.Dot(l_minus)
+                tr_cosThetaPlus_r  = r_a.Dot(l_plus)
+                tr_cosThetaMinus_r =-r_a.Dot(l_minus)
+                tr_cosThetaPlus_k  = k_a.Dot(l_plus)
+                tr_cosThetaMinus_k =-k_a.Dot(l_minus)
 
-                event.tr_cosThetaPlus_r_star  = r_a_star.Dot(l_plus)
-                event.tr_cosThetaMinus_r_star =-r_a_star.Dot(l_minus)
-                event.tr_cosThetaPlus_k_star  = k_a_star.Dot(l_plus)
-                event.tr_cosThetaMinus_k_star =-k_a_star.Dot(l_minus)
+                tr_cosThetaPlus_r_star  = r_a_star.Dot(l_plus)
+                tr_cosThetaMinus_r_star =-r_a_star.Dot(l_minus)
+                tr_cosThetaPlus_k_star  = k_a_star.Dot(l_plus)
+                tr_cosThetaMinus_k_star =-k_a_star.Dot(l_minus)
+
+                setattr(event, "tr_cosThetaPlus_n"+postfix,           tr_cosThetaPlus_n)
+                setattr(event, "tr_cosThetaMinus_n"+postfix,          tr_cosThetaMinus_n)
+                setattr(event, "tr_cosThetaPlus_r"+postfix,           tr_cosThetaPlus_r)
+                setattr(event, "tr_cosThetaMinus_r"+postfix,          tr_cosThetaMinus_r)
+                setattr(event, "tr_cosThetaPlus_k"+postfix,           tr_cosThetaPlus_k)
+                setattr(event, "tr_cosThetaMinus_k"+postfix,          tr_cosThetaMinus_k)
+                setattr(event, "tr_cosThetaPlus_r_star"+postfix,      tr_cosThetaPlus_r_star)
+                setattr(event, "tr_cosThetaMinus_r_star"+postfix,     tr_cosThetaMinus_r_star)
+                setattr(event, "tr_cosThetaPlus_k_star"+postfix,      tr_cosThetaPlus_k_star)
+                setattr(event, "tr_cosThetaMinus_k_star"+postfix,     tr_cosThetaMinus_k_star)
 
                 #print "r_a_star"
                 #r_a_star.Print()
@@ -1366,26 +1305,26 @@ def filler( event ):
                 #print "tr_cosThetaMinus_k_star", event.tr_cosThetaMinus_k_star
 
                 # TOP-18-006 table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf
-                event.tr_xi_nn = event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_n 
-                event.tr_xi_rr = event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_r 
-                event.tr_xi_kk = event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_k
-
-                event.tr_xi_nr_plus = event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_r + event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_n
-                event.tr_xi_nr_minus= event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_r - event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_n
-                event.tr_xi_rk_plus = event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_k + event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_r
-                event.tr_xi_rk_minus= event.tr_cosThetaPlus_r*event.tr_cosThetaMinus_k - event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_r
-                event.tr_xi_nk_plus = event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_k + event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_n
-                event.tr_xi_nk_minus= event.tr_cosThetaPlus_n*event.tr_cosThetaMinus_k - event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_n
-
-                event.tr_xi_r_star_k = event.tr_cosThetaPlus_r_star*event.tr_cosThetaMinus_k
-                event.tr_xi_k_r_star = event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_r_star
-                event.tr_xi_kk_star  = event.tr_cosThetaPlus_k*event.tr_cosThetaMinus_k_star
+                setattr( event, "tr_xi_nn"+postfix, tr_cosThetaPlus_n*tr_cosThetaMinus_n)
+                setattr( event, "tr_xi_rr"+postfix, tr_cosThetaPlus_r*tr_cosThetaMinus_r)
+                setattr( event, "tr_xi_kk"+postfix, tr_cosThetaPlus_k*tr_cosThetaMinus_k)
+ 
+                setattr( event, "tr_xi_nr_plus"+postfix, tr_cosThetaPlus_n*tr_cosThetaMinus_r + tr_cosThetaPlus_r*tr_cosThetaMinus_n)
+                setattr( event, "tr_xi_nr_minus"+postfix, tr_cosThetaPlus_n*tr_cosThetaMinus_r - tr_cosThetaPlus_r*tr_cosThetaMinus_n)
+                setattr( event, "tr_xi_rk_plus"+postfix, tr_cosThetaPlus_r*tr_cosThetaMinus_k + tr_cosThetaPlus_k*tr_cosThetaMinus_r)
+                setattr( event, "tr_xi_rk_minus"+postfix, tr_cosThetaPlus_r*tr_cosThetaMinus_k - tr_cosThetaPlus_k*tr_cosThetaMinus_r)
+                setattr( event, "tr_xi_nk_plus"+postfix, tr_cosThetaPlus_n*tr_cosThetaMinus_k + tr_cosThetaPlus_k*tr_cosThetaMinus_n)
+                setattr( event, "tr_xi_nk_minus"+postfix, tr_cosThetaPlus_n*tr_cosThetaMinus_k - tr_cosThetaPlus_k*tr_cosThetaMinus_n)
+ 
+                setattr( event, "tr_xi_r_star_k"+postfix, tr_cosThetaPlus_r_star*tr_cosThetaMinus_k)
+                setattr( event, "tr_xi_k_r_star"+postfix, tr_cosThetaPlus_k*tr_cosThetaMinus_r_star)
+                setattr( event, "tr_xi_kk_star"+postfix, tr_cosThetaPlus_k*tr_cosThetaMinus_k_star)
                 #print "l_plus unit"
                 #l_plus.Print()
                 #print "l_minus unit"
                 #l_minus.Print()
 
-                event.tr_cos_phi     = l_plus.Dot(l_minus)
+                setattr( event, "tr_cos_phi"+postfix, l_plus.Dot(l_minus) )
 
 
             if sample.isMC:
@@ -1451,6 +1390,7 @@ def filler( event ):
         
         event.overflow_counter_v1 = phasespace_v1.overflow_counter_func()( event, None )
         event.overflow_counter_v2 = phasespace_v2.overflow_counter_func()( event, None )
+        event.overflow_counter_v3 = phasespace_v3.overflow_counter_func()( event, None )
 
         if len(leptons)>=3:
             event.l3_pt         = leptons[2]['pt']

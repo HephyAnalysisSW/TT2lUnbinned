@@ -262,17 +262,17 @@ import operator
 import TT2lUnbinned.Samples.nano_UL20_RunII_postProcessed as samples
 
 training_samples = [ 
-    samples.TT01j2lCAv2Ref_HT500,
-    samples.TTLep,
-    samples.TTLep_pow_CP5_hUp,
-    samples.TTLep_pow_CP5_hDown,
-
-    samples.ST,
-    samples.TTW,
-    samples.TTZ,
-    samples.TTH,
-    samples.DY,
-    samples.DiBoson,
+#    samples.TT01j2lCAv2Ref_HT500,
+#    samples.TTLep,
+#    samples.TTLep_pow_CP5_hUp,
+#    samples.TTLep_pow_CP5_hDown,
+#
+#    samples.ST,
+#    samples.TTW,
+#    samples.TTZ,
+#    samples.TTH,
+#    samples.DY,
+#    samples.DiBoson,
 
     ]
 
@@ -290,6 +290,6 @@ assert len(training_samples)==len(set([s.name for s in training_samples])), "tra
 # training selection
 
 #selection = 'tr-minDLmass20-dilepL-offZ1-njet3p-btag2p-ht500'
-selection = 'tr-minDLmass20-dilepM-offZ1-njet3p-btagM2p-ht500'
+selection = 'tr-minDLmass20-dilepM-offZ1-njet3p-btagM2p-mtt750'
 from TT2lUnbinned.Tools.cutInterpreter import cutInterpreter
 selectionString = cutInterpreter.cutString( selection )

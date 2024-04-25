@@ -4,18 +4,21 @@
 import logging
 logger = logging.getLogger(__name__)
 
-jetSelection    = "nJetGood"
-bJetSelectionM  = "nBTag"
+#jetSelection    = "nJetGood"
+#bJetSelectionM  = "nBTag"
+
+from TT2lUnbinned.Tools.delphesObjectSelection import jet_string
 
 special_cuts = {
     #"photon" :   "(recoPhoton_pt[0]>20)",
     "dilep":           "(recoLep_pt[0]>20&&recoLep_pt[1]>20&&abs(recoLep_eta[0])<2.4&&abs(recoLep_eta[1])<2.4)",
     "dilep2":          "(recoLep_pt[0]>20&&recoLep_pt[1]>20&&abs(recoLep_eta[0])<2.4&&abs(recoLep_eta[1])<2.4)&&nrecoLep==2",
     "trilep":          "(recoLep_pt[0]>20&&recoLep_pt[1]>20&&abs(recoLep_eta[0])<2.4&&abs(recoLep_eta[1])<2.4)&&nrecoLep==3",
-    "bjet_delphes":    "(abs(recoBJet_eta[0])<2.4&&abs(recoBJet_eta[1])<2.4)",
+    #"bjet_delphes":    "(abs(recoBJet_eta[0])<2.4&&abs(recoBJet_eta[1])<2.4)",
+    "offZ":            "(!(recoLep01_mass-91.2)<15)",
   }
 
-continous_variables = [ ("ptG", "recoPhoton_pt[0]"), ("met", "recoMet_pt"), ("ptZ", "recoZ_pt"), ("ptW", "WH_W_pt"), ("ht", "ht")]
+continous_variables = [ ("ptG", "recoPhoton_pt[0]"), ("met", "recoMet_pt"), ("ptZ", "recoZ_pt"), ("ptW", "WH_W_pt"), ("ht", ("Sum$(recoJet_pt*(%s))"%jet_string)), ('mtt', 'tr_ttbar_mass') ]
 discrete_variables  = [ ("njet", "nrecoJet"), ("btag", "nBTag") ]
 
 class cutInterpreter:
