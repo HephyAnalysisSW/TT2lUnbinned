@@ -50,7 +50,9 @@ TTLep_pow_CP5_hUp    = Sample.nanoAODfromDAS("TTLep_pow_CP5_hUp","/TTTo2L2Nu_hda
 
 syst_samples = [TTLep_pow_CP5_hDown, TTLep_pow_CP5_hUp]
 
-allSamples = EFT_samples + syst_samples
+sync = Sample.fromFiles( "sync", ["root://cms-xrd-global.cern.ch//store/mc/RunIISummer20UL18NanoAODv9/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/2430000/0E134A8D-17DC-B149-9916-1E8DA19E4F9E.root"], xSection=1)
+sync.normalization = 1.
+allSamples = EFT_samples + syst_samples + [sync]
 
 for s in allSamples:
     s.isData = False

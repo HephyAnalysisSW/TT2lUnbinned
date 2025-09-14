@@ -1,5 +1,6 @@
 from RootTools.core.standard import *
 import os
+import copy
 
 from TT2lUnbinned.Tools.user import postprocessing_output_directory as directory_
 directory = os.path.join( directory_, 'delphes/v1' ) 
@@ -42,3 +43,15 @@ DYJetsToLL_M50_HT_fakeB2           = Sample.combine( "DYJetsToLL_M50_HT_fakeB2",
 #TT01j2lCAMyRef.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/CA_v3/TT01j2lCAMyRef_reweight_card.pkl"
 TT01j2lCAOldRef_Mtt500_ext      = Sample.fromDirectory( "TT01j2lCAOldRef_Mtt500_ext", [os.path.join( directory, "TT01j2lCAOldRef_Mtt500_ext")], texName = "t#bar{t}")
 TT01j2lCAOldRef_Mtt500_ext.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/CA_v4/TT01j2lCAOldRef_reweight_card.pkl"
+
+TT01j2lCAOldRef_Mtt500_small      = copy.deepcopy( TT01j2lCAOldRef_Mtt500_ext )
+TT01j2lCAOldRef_Mtt500_small.name = "TT01j2lCAOldRef_Mtt500_small"
+TT01j2lCAOldRef_Mtt500_small.files = TT01j2lCAOldRef_Mtt500_ext.files[:50] 
+
+TT01j2lCAOldRef_Mtt500_20percent      = copy.deepcopy( TT01j2lCAOldRef_Mtt500_ext )
+TT01j2lCAOldRef_Mtt500_20percent.name = "TT01j2lCAOldRef_Mtt500_20percent"
+TT01j2lCAOldRef_Mtt500_20percent.reduceFiles( factor=5 ) 
+
+TT01j2lCAOldRef_Mtt500_50percent      = copy.deepcopy( TT01j2lCAOldRef_Mtt500_ext )
+TT01j2lCAOldRef_Mtt500_50percent.name = "TT01j2lCAOldRef_Mtt500_50percent"
+TT01j2lCAOldRef_Mtt500_50percent.reduceFiles( factor=2 ) 

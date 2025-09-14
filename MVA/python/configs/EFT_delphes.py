@@ -96,7 +96,7 @@ all_mva_variables = {
      "jet5_pt"               :(lambda event, sample: event.recoJet_pt[5]          if event.nrecoJet >=6 else 0),
      "jet6_pt"               :(lambda event, sample: event.recoJet_pt[6]          if event.nrecoJet >=7 else 0),
      "jet7_pt"               :(lambda event, sample: event.recoJet_pt[7]          if event.nrecoJet >=8 else 0),
-
+     "ht"                    :(lambda event, sample: sum( [0.]+[ event.recoJet_pt[i] for i in range(event.nrecoJet)])),
 }
 
 for var in [
@@ -142,6 +142,9 @@ import TT2lUnbinned.Samples.delphes_RunII_postProcessed as samples
 
 training_samples = [ 
     samples.TT01j2lCAOldRef_Mtt500_ext,
+    samples.TT01j2lCAOldRef_Mtt500_small,
+    samples.TT01j2lCAOldRef_Mtt500_20percent,
+    samples.TT01j2lCAOldRef_Mtt500_50percent,
     samples.TTLep,
     #samples.TTLep_hdampDOWN,
     #samples.TTLep_hdampUP,

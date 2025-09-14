@@ -1,10 +1,14 @@
-#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v4 --config EFT_for_paper --sample TTLep_RunII
-#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v4 --config EFT_for_paper --sample TTLep_UL2016_preVFP
-#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v4 --config EFT_for_paper --sample TTLep_UL2016
-#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v4 --config EFT_for_paper --sample TTLep_UL2017
-#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v4 --config EFT_for_paper --sample TTLep_UL2018
 
-python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v5 --config EFT_for_paper --sample TTLep
-python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v5 --config EFT_for_paper --sample ST
-python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v5 --config EFT_for_paper --sample DY 
+python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v7 --config EFT_for_paper --sample TTLep_Autumn18
+python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v7 --config EFT_for_paper --sample TTLep_Summer16_preVFP
+python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v7 --config EFT_for_paper --sample TTLep_Summer16
+python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v7 --config EFT_for_paper --sample TTLep_Fall17
+
+python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v7 --config EFT_for_paper --sample TTLep
+
+#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v6 --config EFT_for_paper --sample TTLep
+#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v5 --config EFT_for_paper --sample TTLep_pow_hUp
+#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v5 --config EFT_for_paper --sample TTLep_pow_hDown
+#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v5 --config EFT_for_paper --sample ST
+#python make_ntuple.py --output /eos/vbc/group/cms/robert.schoefbeck/TT2lUnbinned/training-ntuples-v5 --config EFT_for_paper --sample DY 
 

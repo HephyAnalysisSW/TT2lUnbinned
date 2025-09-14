@@ -1,6 +1,7 @@
 #Standard imports
 import  ROOT
-from    math    import pi, sqrt, cos, sin, sinh, log, cosh, acos
+from math import sqrt, cos, sin, pi, atan2, cosh, sinh, acos, log
+
 from    array   import array
 import  itertools
 
@@ -363,3 +364,58 @@ def make_TH2F( h, ignore_binning = False):
             if v<float('inf'): # NAN protection
                 histo.SetBinContent(histo.FindBin(thrs_x[ix], thrs_y[iy]), v)
     return histo
+
+def p4(pt, eta, phi, mass=0.0):
+    px = pt * cos(phi)
+    py = pt * sin(phi)
+    pz = pt * sinh(eta)
+    E  = sqrt(max(0.0, px*px + py*py + pz*pz + mass*mass))
+    return (px, py, pz, E)
+
+def add_p4(a, b):
+    return (a[0]+b[0], a[1]+b[1], a[2]+b[2], a[3]+b[3])
+
+def mass_of(p):
+    m2 = p[3]*p[3] - (p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
+    return sqrt(max(0.0, m2))
+
+def pt_eta_phi_m(p):
+    px, py, pz, E = p
+    pt  = sqrt(px*px + py*py)
+    eta = 0.5*log((E+pz)/(E-pz)) if E > abs(pz) else float('nan')
+    phi = atan2(py, px)
+    m   = mass_of(p)
+    return pt, eta, phi, m
+
+def boost_to_rest(p, frame):
+    # Boost 4-vector p into the rest frame of 'frame'
+    px, py, pz, E = p
+    fx, fy, fz, FE = frame
+    # beta vector of frame
+    bx, by, bz = (fx/FE, fy/FE, fz/FE) if FE > 0.0 else (0.0, 0.0, 0.0)
+    b2 = bx*bx + by*by + bz*bz
+    if b2 >= 1.0 or FE <= 0.0:
+        # pathological; return original
+        return p
+    gamma = 1.0 / sqrt(1.0 - b2)
+    bp = bx*px + by*py + bz*pz  # beta dot p
+    # p' = p + [ (gamma-1)*(beta dot p)/beta^2 - gamma*E ] * beta
+    k = (gamma - 1.0) * (bp / b2) - gamma * E
+    pxp = px + k * bx
+    pyp = py + k * by
+    pzp = pz + k * bz
+    Ep  = gamma * (E - bp)
+    return (pxp, pyp, pzp, Ep)
+
+def p3_mag(p):
+    return sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
+
+def p_from_ptetaphi(pt, eta, phi):
+    px = pt * cos(phi)
+    py = pt * sin(phi)
+    pz = pt * sinh(eta)
+    return (px, py, pz)
+
+def legendre_P3(x):
+    # P3(x) = (5 x^3 - 3 x) / 2
+    return 0.5 * (5.0*x*x*x - 3.0*x)

@@ -18,7 +18,6 @@ color.TWZ            = ROOT.kRed
 color.TTW            = ROOT.kGreen+2
 color.TTG            = ROOT.kOrange
 color.Other          = ROOT.kOrange+2 #ROOT.kViolet+5
-color.TT             = ROOT.kRed+1
 color.TTbb           = ROOT.kRed-8 #ROOT.kRed+1
 color.TT_EFT         = ROOT.kRed-8 #ROOT.kRed+1
 color.TTTT           = ROOT.kOrange+1
@@ -31,6 +30,11 @@ color.W              = ROOT.kCyan+1
 color.WJets          = ROOT.kCyan+1
 color.QCD            = ROOT.kGreen-2 #+3
 color.GJets          = ROOT.kGreen+4
+
+color.TT             = ROOT.kRed+1
+color.sCh            = ROOT.kBlue+2
+color.tCh            = ROOT.kOrange-1
+color.tW             = ROOT.kRed-1
 
 color.gen            = ROOT.kOrange
 color.had            = ROOT.kAzure-3

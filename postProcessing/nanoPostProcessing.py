@@ -12,7 +12,7 @@ import copy
 
 import array as arr
 from operator import mul
-from math import sqrt, atan2, sin, cos, acos
+from math import sqrt, cos, sin, pi, atan2, cosh, sinh, acos, log
 
 # RootTools
 from RootTools.core.standard import *
@@ -21,9 +21,10 @@ from RootTools.core.standard import *
 import TT2lUnbinned.Tools.user as user
 
 # TT2lUnbinned
-from TT2lUnbinned.Tools.helpers             import closestOSDLMassToMZ, deltaR, deltaPhi, bestDRMatchInCollection, nonEmptyFile, getSortedZCandidates, cosThetaStar, m3, getMinDLMass
-from TT2lUnbinned.Tools.objectSelection     import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGenPartsAll, getJets, genLepFromZ, getGenZs, isAnalysisJet
-from TT2lUnbinned.Tools.triggerEfficiency   import triggerEfficiency
+from TT2lUnbinned.Tools.helpers              import closestOSDLMassToMZ, deltaR, deltaPhi, bestDRMatchInCollection, nonEmptyFile, getSortedZCandidates, cosThetaStar, m3, getMinDLMass
+from TT2lUnbinned.Tools.helpers              import p4, add_p4, mass_of, pt_eta_phi_m, boost_to_rest, p3_mag, p_from_ptetaphi, legendre_P3
+from TT2lUnbinned.Tools.objectSelection      import getMuons, getElectrons, muonSelector, eleSelector, getGoodMuons, getGoodElectrons, isBJet, getGenPartsAll, getJets, genLepFromZ, getGenZs, isAnalysisJet
+from TT2lUnbinned.Tools.triggerEfficiency    import triggerEfficiency
 import TT2lUnbinned.Tools.fixTVecMul
 from TT2lUnbinned.Analysis.phasespace.v1     import phasespace as phasespace_v1
 from TT2lUnbinned.Analysis.phasespace.v2     import phasespace as phasespace_v2
@@ -136,7 +137,7 @@ if options.event > 0:
 if isDilep:
     skimConds.append( "Sum$(Electron_pt>20&&abs(Electron_eta)<2.5) + Sum$(Muon_pt>20&&abs(Muon_eta)<2.5)>=2" )
 elif isSinglelep:
-    skimConds.append( "Sum$(Electron_pt>10&&abs(Electron_eta)<2.5) + Sum$(Muon_pt>10&&abs(Muon_eta)<2.5)>=1" )
+    skimConds.append( "Sum$(Electron_pt>30&&abs(Electron_eta)<2.5) + Sum$(Muon_pt>30&&abs(Muon_eta)<2.5)>=1" )
 
 if 'ht500' in options.skim.lower():
     skimConds.append("Sum$(Jet_pt*(Jet_pt>20&&abs(Jet_eta)<2.4))>500")
@@ -472,33 +473,50 @@ maxJetAbsEta = 2.4
 jetVars         = ['pt/F', 'chEmEF/F', 'chHEF/F', 'neEmEF/F', 'muEF/F', 'neHEF/F', 'rawFactor/F', 'eta/F', 'phi/F', 'jetId/I', 'btagDeepB/F', 'btagDeepCvB/F', 'btagDeepCvL/F', 'btagDeepFlavB/F', 'btagDeepFlavCvB/F', 'btagDeepFlavCvL/F', 'btagDeepFlavQG/F', 'btagCSVV2/F', 'area/F', 'pt_nom/F', 'corr_JER/F'] + jetCorrInfo
 jesUncertainties = [
     "Total",
-    "AbsoluteMPFBias",
-    "AbsoluteScale",
-    "AbsoluteStat",
-    "RelativeBal",
-    "RelativeFSR",
-    #"RelativeJEREC1",
-    #"RelativeJEREC2",
-    #"RelativeJERHF",
-    "RelativePtBB",
-    #"RelativePtEC1",
-    #"RelativePtEC2",
-    #"RelativePtHF",
-    #"RelativeStatEC",
-    "RelativeStatFSR",
-    #"RelativeStatHF",
-    "PileUpDataMC",
-    "PileUpPtBB",
-    #"PileUpPtEC1",
-    #"PileUpPtEC2",
-    #"PileUpPtHF",
-    "PileUpPtRef",
-    "FlavorQCD",
-    "Fragmentation",
-    "SinglePionECAL",
-    "SinglePionHCAL",
+    #"AbsoluteMPFBias",
+    #"AbsoluteScale",
+    #"AbsoluteStat",
+    #"RelativeBal",
+    #"RelativeFSR",
+    ##"RelativeJEREC1",
+    ##"RelativeJEREC2",
+    ##"RelativeJERHF",
+    #"RelativePtBB",
+    ##"RelativePtEC1",
+    ##"RelativePtEC2",
+    ##"RelativePtHF",
+    ##"RelativeSample",#FIXME untested!
+    ##"RelativeStatEC",
+    #"RelativeStatFSR",
+    ##"RelativeStatHF",
+    #"PileUpDataMC",
+    #"PileUpPtBB",
+    ##"PileUpPtEC1",
+    ##"PileUpPtEC2",
+    ##"PileUpPtHF",
+    #"PileUpPtRef",
+    #"FlavorQCD",
+    #"Fragmentation",
+    #"SinglePionECAL",
+    #"SinglePionHCAL",
     "TimePtEta",
+    #"CorrelationGroupMPFInSitu",
+    #"CorrelationGroupIntercalibration",
+    #"CorrelationGroupbJES",
+    #"CorrelationGroupFlavor",
+    #"CorrelationGroupUncorrelated",
+    "SubTotalPileUp",
+    "SubTotalRelative",
+    "SubTotalAbsolute",
+    "SubTotalPt",
+    "SubTotalScale",
+    "SubTotalAbsolute",
+    "SubTotalMC",
+    "TotalNoFlavor",
+    "TotalNoTime",
+    "TotalNoFlavorNoTime",
 ]
+
 if sample.isMC:
     jetVars     += jetMCInfo
     jesVariations= ["pt_jes%s%s"%(var, upOrDown) for var in jesUncertainties for upOrDown in ["Up","Down"]]
@@ -578,12 +596,24 @@ new_variables.extend( ['jet0_pt/F',  'jet1_pt/F',  'jet2_pt/F' ] )
 new_variables.extend( ['jet0_eta/F', 'jet1_eta/F', 'jet2_eta/F' ] )
 new_variables.extend( ['jet0_phi/F', 'jet1_phi/F', 'jet2_phi/F' ] )
 
+new_variables.extend( ['bjet0_pt/F',  'bjet1_pt/F',  'bjet2_pt/F' ] )
+new_variables.extend( ['bjet0_eta/F', 'bjet1_eta/F', 'bjet2_eta/F' ] )
+
 if isDilep or isSinglelep:
     new_variables.extend( ['nGoodMuons/I', 'nGoodElectrons/I', 'nGoodLeptons/I' ] )
     new_variables.extend( ['l1_pt/F', 'l1_mvaTOP/F', 'l1_mvaTOPWP/I', 'l1_mvaTOPv2/F', 'l1_mvaTOPv2WP/I', 'l1_ptCone/F', 'l1_eta/F', 'l1_phi/F', 'l1_pdgId/I', 'l1_index/I', 'l1_jetPtRelv2/F', 'l1_jetPtRatio/F', 'l1_miniRelIso/F', 'l1_relIso03/F', 'l1_dxy/F', 'l1_dz/F', 'l1_mIsoWP/I', 'l1_eleIndex/I', 'l1_muIndex/I', 'l1_isFO/O', 'l1_isTight/O'] )
     new_variables.extend( ['mlmZ_mass/F'])
     if sample.isMC:
         new_variables.extend(['reweightLeptonSF/F', 'reweightLeptonSFUp/F', 'reweightLeptonSFDown/F'])
+
+if isSinglelep:
+    new_variables.extend( 
+       ["top_pt/F", "top_eta/F", "top_phi/F", "top_m/F", "top_other_pt/F", "top_other_eta/F", "top_other_phi/F", "top_other_m/F", "top_b_index/I" ,
+        "W_pt/F", "W_eta/F", "W_phi/F", "W_m/F", "nu_pt/F", "nu_eta/F", "nu_phi/F", "nu_m/F", 
+        "mT/F", "mlb0/F", "mlb1/F", "pT_bb/F", "cosTheta_lb_topRF/F", "FW3/F", "FW0/F", "FW3_R/F", 
+        "DEta_l_b0/F", "DEta_l_b1/F", "DEta_top_b0/F", "DEta_top_b1/F", "Cos_DPhi_top_b0/F", "Cos_DPhi_top_b1/F", "cos_DPhi_l_met/F",
+        ]) 
+
 if isDilep:
     new_variables.extend( ['l2_pt/F', 'l2_mvaTOP/F', 'l2_mvaTOPWP/I', 'l2_mvaTOPv2/F', 'l2_mvaTOPv2WP/I', 'l2_ptCone/F', 'l2_eta/F', 'l2_phi/F', 'l2_pdgId/I', 'l2_index/I', 'l2_jetPtRelv2/F', 'l2_jetPtRatio/F', 'l2_miniRelIso/F', 'l2_relIso03/F', 'l2_dxy/F', 'l2_dz/F', 'l2_mIsoWP/I', 'l2_eleIndex/I', 'l2_muIndex/I', 'l2_isFO/O', 'l2_isTight/O'] )
     if sample.isMC: new_variables.extend( \
@@ -635,16 +665,20 @@ if addSystematicVariations:
                 new_variables.extend( [var__.replace('/', '_'+var+'/') for var__ in tr_variables] ) 
             read_variables.extend( ['MET_T1_pt_'+var+'/F', 'MET_T1_phi_'+var+'/F'] )
 
-    bTagVariations = {'central':1., 'up_jes':1., 'down_jes':1., 'up_lf':1.,
-                 'down_lf':1., 'up_hfstats1':1., 'down_hfstats1':1.,
-                 'up_hfstats2':1., 'up_hfstats2':1., 'down_hfstats2':1.,
-                 'up_cferr1':1., 'down_cferr1':1., 'up_cferr2':1.,
-                 'down_cferr2':1., 'up_hf':1., 'down_hf':1., 'up_lfstats1':1.,
-                 'down_lfstats1':1., 'up_lfstats2':1., 'down_lfstats2':1.
-                 }
+    bTagVariations = ['central', 'up_jes', 'down_jes', 'up_lf',
+                 'down_lf', 'up_hfstats1', 'down_hfstats1',
+                 'up_hfstats2', 'up_hfstats2', 'down_hfstats2',
+                 'up_cferr1', 'down_cferr1', 'up_cferr2',
+                 'down_cferr2', 'up_hf', 'down_hf', 'up_lfstats1',
+                 'down_lfstats1', 'up_lfstats2', 'down_lfstats2'
+                 ]
     if sample.isMC:
-        for k in bTagVariations.keys():
+        for k in bTagVariations:
             new_variables.append('reweightBTagSF_'+k+'/F')
+
+        for var in btagEff.btagWeightNames:
+            if var!='MC':
+                new_variables.append('reweightBTagSF1a_'+var+'/F')
 
 if not options.skipNanoTools:
     ### nanoAOD postprocessor
@@ -1028,6 +1062,15 @@ def filler( event ):
     event.nBTag      = len(nominal_bJets)
     event.m3, _,_,_  = m3(jets)
 
+    if event.nBTag>=1:
+        event.bjet0_pt  = nominal_bJets[0]['pt']
+        event.bjet0_eta = nominal_bJets[0]['eta']
+        event.bjet0_phi = nominal_bJets[0]['phi']
+    if event.nBTag>=2:
+        event.bjet1_pt  = nominal_bJets[1]['pt']
+        event.bjet1_eta = nominal_bJets[1]['eta']
+        event.bjet1_phi = nominal_bJets[1]['phi']
+
     # we got all objects, so let's make dR
 
     jets_sys      = {}
@@ -1091,6 +1134,316 @@ def filler( event ):
             event.reweightLeptonSFUp   = reduce(mul, [sf for sf in leptonSFUp], 1)
             if event.reweightLeptonSF ==0:
                logger.error( "reweightLeptonSF is zero!")
+
+    if isSinglelep:
+
+        if len( nominal_bJets )>=1:
+            event.mlb0 = sqrt(2*nominal_bJets[0]['pt']*event.l1_pt*(cosh(nominal_bJets[0]['eta']-event.l1_eta)-cos(nominal_bJets[0]['phi']-event.l1_phi)))
+        # pT_bb (px, py add in quadrature)
+        if len(nominal_bJets) >= 2:
+            px_sum = nominal_bJets[0]['pt']*cos(nominal_bJets[0]['phi']) + nominal_bJets[1]['pt']*cos(nominal_bJets[1]['phi'])
+            py_sum = nominal_bJets[0]['pt']*sin(nominal_bJets[0]['phi']) + nominal_bJets[1]['pt']*sin(nominal_bJets[1]['phi'])
+            event.pT_bb = sqrt(px_sum**2 + py_sum**2)
+            event.mlb1 = sqrt(2*nominal_bJets[1]['pt']*event.l1_pt*(cosh(nominal_bJets[1]['eta']-event.l1_eta)-cos(nominal_bJets[1]['phi']-event.l1_phi)))
+
+        # Angles & transverse mass
+        dphi = event.l1_phi - event.met_phi
+        event.cos_DPhi_l_met = cos(dphi)
+        sin2_phi = max(0.0, 1.0 - event.cos_DPhi_l_met**2)  # = sin^2(phi), robust to tiny negatives
+        event.mT = sqrt(2.0 * event.l1_pt * event.met_pt * (1.0 - event.cos_DPhi_l_met))
+
+        # Constants & shorthands
+        mW = 80.4
+        mW2 = mW*mW
+        pTl = event.l1_pt
+        met = event.met_pt
+        eta = event.l1_eta
+
+        # Massless lepton: pz_l = pTl*sinh(eta), E_l = pTl*cosh(eta)
+        pzl = pTl * sinh(eta)
+        El  = pTl * cosh(eta)
+
+        # Lambda with measured MET direction & magnitude
+        # (this is the "original" setup where pT,nu = MET when the discriminant is >= 0)
+        Lambda = 0.5*mW2 + pTl*met*event.cos_DPhi_l_met
+
+        # Quadratic in pz_nu:  pz_nu = (Lambda*pzl +/- El * sqrt(Lambda^2 - pTl^2 * met^2)) / pTl^2
+        # -> Discriminant:
+        disc = Lambda*Lambda - (pTl*pTl) * (met*met)
+
+        if disc >= 0.0:
+            # Two real solutions: pick the one with the smaller |pz|
+            A    = (Lambda * pzl) / (pTl*pTl)
+            root = (El / (pTl*pTl)) * sqrt(disc)
+            pz_nu_1 = A + root
+            pz_nu_2 = A - root
+
+            pT_nu = met          # keep measured MET when solutions are real
+            pz_nu = pz_nu_1 if abs(pz_nu_1) < abs(pz_nu_2) else pz_nu_2
+
+        else:
+            # Complex: enforce reality by Delta=0 and choose the neutrino pT on the boundary
+            # If we keep the nu direction fixed to the MET direction, the boundary gives a scalar quadratic in rho = |pT,nu|:
+            # Handle small sin phi separately to avoid division by ~0.
+            eps = 1e-6  # threshold on sin^2 phi
+
+            if sin2_phi < eps:
+                # Collinear / anti-collinear limit: linear solution
+                # rho = - mW^2 / (4 pTl cos phi)
+                # Only meaningful when cos phi approx +/-1; here we are already in the Delta<0 branch so phi ~ pi is the typical case.
+                if abs(event.cos_DPhi_l_met) < 1e-12:
+                    # extremely degenerate: fall back to using MET magnitude as a harmless default
+                    rho = met
+                else:
+                    rho = - mW2 / (4.0 * pTl * event.cos_DPhi_l_met)
+
+                # If numerical noise produces negative rho, clamp to zero (non-physical otherwise)
+                if rho < 0.0:
+                    rho = 0.0
+
+                pT_nu = rho
+                Lambda_star = 0.5*mW2 + pTl * rho * event.cos_DPhi_l_met
+                pz_nu = (Lambda_star * pzl) / (pTl*pTl)
+
+            else:
+                # Generic quadratic: two roots for rho
+                # rho +/-  = [ (mW^2/2) (cos phi +/- 1) ] / [ pTl sin^2 phi ]
+                denom = pTl * sin2_phi
+                rho1 = (0.5*mW2 * (event.cos_DPhi_l_met + 1.0)) / denom
+                rho2 = (0.5*mW2 * (event.cos_DPhi_l_met - 1.0)) / denom
+
+                # Choose rho closest to measured MET magnitude
+                rho = rho1 if abs(met - rho1) < abs(met - rho2) else rho2
+                if rho < 0.0:  # guard against tiny negative due to rounding
+                    rho = 0.0
+
+                pT_nu = rho
+                Lambda_star = 0.5*mW2 + pTl * rho * event.cos_DPhi_l_met
+                pz_nu = (Lambda_star * pzl) / (pTl*pTl)
+
+        # Lepton 4-vector
+        p4_l = p4(event.l1_pt, event.l1_eta, event.l1_phi, 0.0)
+
+        # Neutrino 4-vector
+        px_nu = pT_nu * cos(event.met_phi)
+        py_nu = pT_nu * sin(event.met_phi)
+        pz_nu = pz_nu
+        E_nu  = sqrt(max(0.0, pT_nu*pT_nu + pz_nu*pz_nu))
+        p4_nu = (px_nu, py_nu, pz_nu, E_nu)
+
+        # W boson
+        p4_W = add_p4(p4_l, p4_nu)
+
+        # Store neutrino kinematics
+        nu_pt, nu_eta, nu_phi, nu_m = pt_eta_phi_m(p4_nu)
+        event.nu_pt  = nu_pt
+        event.nu_eta = nu_eta
+        event.nu_phi = nu_phi
+        # massless
+        event.nu_m   = 0.0
+
+        # Store W kinematics
+        W_pt, W_eta, W_phi, W_m = pt_eta_phi_m(p4_W)
+        event.W_pt  = W_pt
+        event.W_eta = W_eta
+        event.W_phi = W_phi
+        event.W_m   = W_m
+
+        # --- Top reconstruction with two b-tagged jets (2j2t or 3j2t) ---
+        # Use the SAME b-jet counting as for pT_bb: event.bJets already filtered with |eta|<=2.4
+
+        if len(nominal_bJets) >= 1:
+
+            # b-jet 4-vector
+            b0 = nominal_bJets[0]
+            m_b0 = b0.get('mass', 0.0)
+            p4_b0 = p4(b0['pt'], b0['eta'], b0['phi'], m_b0)
+
+            # Top candidate
+            p4_t0 = add_p4(p4_W, p4_b0)
+            m_t0 = mass_of(p4_t0)
+
+            event.top_b_index = 0
+            mtop        = m_t0
+            mtop_other  = float('nan')
+            mtop_diff   = abs(m_t0 - 172.5)
+
+            # Store chosen top candidate
+            top_pt, top_eta, top_phi, top_m = pt_eta_phi_m(p4_t0)
+            event.top_pt  = top_pt
+            event.top_eta = top_eta
+            event.top_phi = top_phi
+            event.top_m   = top_m
+
+            # No "other" top
+            event.top_other_pt  = float('nan')
+            event.top_other_eta = float('nan')
+            event.top_other_phi = float('nan')
+            event.top_other_m   = float('nan')
+
+        if len(nominal_bJets) >= 2:
+
+            # Build top candidates with each of the two b jets
+            # (In 2j2t / 3j2t categories there should be exactly two b-tagged jets.)
+            b0 = nominal_bJets[0]
+            b1 = nominal_bJets[1]
+
+            # If your jets include a 'mass' field, use it; otherwise treat as massless
+            m_b0 = b0.get('mass', 0.0)
+            m_b1 = b1.get('mass', 0.0)
+
+            p4_b0 = p4(b0['pt'], b0['eta'], b0['phi'], m_b0)
+            p4_b1 = p4(b1['pt'], b1['eta'], b1['phi'], m_b1)
+
+            p4_t0 = add_p4(p4_W, p4_b0)
+            p4_t1 = add_p4(p4_W, p4_b1)
+
+            m_t0 = mass_of(p4_t0)
+            m_t1 = mass_of(p4_t1)
+
+            # Choose the b jet whose top mass is closer to the nominal 172.5 GeV
+            mtop_nominal = 172.5
+            if abs(m_t0 - mtop_nominal) <= abs(m_t1 - mtop_nominal):
+                event.top_b_index = 0
+                mtop        = m_t0
+                mtop_other  = m_t1
+            else:
+                event.top_b_index = 1
+                mtop        = m_t1
+                mtop_other  = m_t0
+
+            mtop_diff = abs(mtop - mtop_nominal)
+
+            # Top candidate with chosen b
+            if event.top_b_index == 0:
+                p4_top      = p4_t0
+                p4_top_other= p4_t1
+            else:
+                p4_top      = p4_t1
+                p4_top_other= p4_t0
+
+            # Store chosen top
+            top_pt, top_eta, top_phi, top_m = pt_eta_phi_m(p4_top)
+            event.top_pt  = top_pt
+            event.top_eta = top_eta
+            event.top_phi = top_phi
+            event.top_m   = top_m
+
+            # Store "other" top
+            o_pt, o_eta, o_phi, o_m = pt_eta_phi_m(p4_top_other)
+            event.top_other_pt  = o_pt
+            event.top_other_eta = o_eta
+            event.top_other_phi = o_phi
+            event.top_other_m   = o_m
+
+        if len(nominal_bJets) == 0:
+            # Not enough b-tagged jets to do this selection
+            event.top_b_index = -1
+            mtop        = float('nan')
+            mtop_other  = float('nan')
+            mtop_diff   = float('nan')
+            event.top_pt        = float('nan')
+            event.top_eta       = float('nan')
+            event.top_phi       = float('nan')
+            event.top_m         = float('nan')
+            event.top_other_pt  = float('nan')
+            event.top_other_eta = float('nan')
+            event.top_other_phi = float('nan')
+            event.top_other_m   = float('nan')
+
+        # -------------------------------------------------
+        # a) cos(theta) between lepton and spectator b jet
+        #     in the top-quark rest frame
+        # -------------------------------------------------
+        # Identify spectator b: the other b-jet than the one used for top
+        if len(nominal_bJets) >= 2 and event.top_b_index in (0, 1):
+            b_spec = nominal_bJets[1 - event.top_b_index]
+            m_bspec = b_spec.get('mass', 0.0)
+            p4_bspec = p4(b_spec['pt'], b_spec['eta'], b_spec['phi'], m_bspec)
+
+            # Boost lepton and spectator b into top rest frame
+            p4_l_topRF     = boost_to_rest(p4_l, p4_top)
+            p4_bspec_topRF = boost_to_rest(p4_bspec, p4_top)
+
+            pl = (p4_l_topRF[0], p4_l_topRF[1], p4_l_topRF[2])
+            pb = (p4_bspec_topRF[0], p4_bspec_topRF[1], p4_bspec_topRF[2])
+            ml = p3_mag(p4_l_topRF)
+            mb = p3_mag(p4_bspec_topRF)
+
+            if ml > 0.0 and mb > 0.0:
+                cos_theta = (pl[0]*pb[0] + pl[1]*pb[1] + pl[2]*pb[2]) / (ml * mb)
+                # Numerical safety
+                if cos_theta > 1.0:  cos_theta = 1.0
+                if cos_theta < -1.0: cos_theta = -1.0
+                event.cosTheta_lb_topRF = cos_theta
+            else:
+                event.cosTheta_lb_topRF = float('nan')
+        else:
+            # Not enough b-jets or no chosen index
+            event.cosTheta_lb_topRF = float('nan')
+
+        # -------------------------------------------------
+        # b) Fox-Wolfram third moment (and normalized)
+        #     Build from all selected jets + lepton + neutrino
+        # -------------------------------------------------
+        # Collect 3-momenta (px,py,pz) and magnitudes
+        p_list = []
+
+        # jets
+        for j in store_jets:
+            px = j['pt'] * cos(j['phi'])
+            py = j['pt'] * sin(j['phi'])
+            pz = j['pt'] * sinh(j['eta'])
+            p_list.append((px, py, pz))
+
+        # lepton (massless)
+        p_list.append(p_from_ptetaphi(event.l1_pt, event.l1_eta, event.l1_phi))
+
+        # neutrino (use reconstructed pT and pz, phi from MET; eta is not needed)
+        px_nu = pT_nu * cos(event.met_phi)
+        py_nu = pT_nu * sin(event.met_phi)
+        pz_nu = pz_nu
+        p_list.append((px_nu, py_nu, pz_nu))
+
+        # Compute H0 and H3
+        H0 = 0.0
+        H3 = 0.0
+        # Precompute magnitudes
+        mags = [sqrt(px*px + py*py + pz*pz) for (px,py,pz) in p_list]
+
+        n = len(p_list)
+        for i in range(n):
+            pi = p_list[i]
+            mi = mags[i]
+            if mi == 0.0:
+                continue
+            for j in range(n):
+                pj = p_list[j]
+                mj = mags[j]
+                if mj == 0.0:
+                    continue
+                # cos(theta_ij)
+                cij = (pi[0]*pj[0] + pi[1]*pj[1] + pi[2]*pj[2]) / (mi * mj)
+                # numerical clamp
+                if cij > 1.0:  cij = 1.0
+                if cij < -1.0: cij = -1.0
+                H0 += mi * mj
+                H3 += mi * mj * legendre_P3(cij)
+
+        event.FW3   = H3
+        event.FW0   = H0
+        event.FW3_R = (H3 / H0) if H0 > 0.0 else float('nan')
+
+       #  "Cos_DPhi_top_b0/F", "Cos_DPhi_top_b1/F",] 
+
+        if len(nominal_bJets)>=1:
+            event.DEta_l_b0 = abs(nominal_bJets[0]['eta']-event.l1_eta)
+            event.DEta_top_b0 = abs(nominal_bJets[0]['eta']-event.top_eta)
+            event.Cos_DPhi_top_b0 = cos(nominal_bJets[0]['phi']-event.top_phi)
+        if len(nominal_bJets)>=2:
+            event.DEta_l_b1 = abs(nominal_bJets[1]['eta']-event.l1_eta)
+            event.DEta_top_b1 = abs(nominal_bJets[1]['eta']-event.top_eta)
+            event.Cos_DPhi_top_b1 = cos(nominal_bJets[1]['phi']-event.top_phi)
 
     if isDilep:
         if len(leptons)>=2:
@@ -1436,17 +1789,18 @@ def filler( event ):
             #Comment 1a method (tbc)
             #btagEff.addBTagEffToJet(j)
 
-        for k in bTagVariations.keys():
+        for k in bTagVariations:
             finalWeight = 1.
             for j in jets:
                 btagRes.getbtagSF(j)
                 finalWeight *= j["jetSF"][k] if j["jetSF"].has_key(k) else j["jetSF"]["central"]
             setattr( event, 'reweightBTagSF_'+k, finalWeight)
 
-            #Comment 1a method (tbc)
-            # for var in btagEff.btagWeightNames:
-            #     if var!='MC':
-            #         setattr(event, 'reweightBTag_'+var, btagEff.getBTagSF_1a( var, bJets, filter( lambda j: abs(j['eta'])<2.4, nonBJets ) ) )
+        for j in nominal_bJets+nominal_nonBJets:
+            btagEff.addBTagEffToJet(j)
+        for var in btagEff.btagWeightNames:
+            if var!='MC':
+                setattr(event, 'reweightBTagSF1a_'+var, btagEff.getBTagSF_1a( var, nominal_bJets, filter( lambda j: abs(j['eta'])<2.4, nominal_nonBJets) ) )
 
 
 # Create a maker. Maker class will be compiled. This instance will be used as a parent in the loop
