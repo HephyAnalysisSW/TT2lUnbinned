@@ -4,13 +4,17 @@
 #python nanoPostProcessing.py --forceProxy  --btag_WP loose --skim dilep --era UL2018 --processingEra TT2lUnbinned_v7 --sample TTLep_pow_CP5_hDown #SPLIT58
 #python nanoPostProcessing.py --forceProxy  --btag_WP loose --skim dilep --era UL2018 --processingEra TT2lUnbinned_v7 --sample TTLep_pow_CP5_hUp #SPLIT44
 
-python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v8 --noTriggerSelection --flagTT --sample TTSingleLep_pow_CP5 #SPLIT391
-python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v8 --noTriggerSelection --flagTT --sample t_sch  #SPLIT19
-python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v8 --noTriggerSelection --flagTT --sample TTLep_pow_CP5  #SPLIT155
-python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v8 --noTriggerSelection --sample T_tch_pow   #SPLIT149
-python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v8 --noTriggerSelection --sample TBar_tch_pow  #SPLIT130
-python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v8 --noTriggerSelection --sample T_tWch  #SPLIT15
-python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v8 --noTriggerSelection --sample TBar_tWch  #SPLIT16
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --flagTT --sample TTSingleLep_pow_CP5 #SPLIT391
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --flagTT --sample t_sch  #SPLIT19
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --flagTT --sample TTLep_pow_CP5  #SPLIT155
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --sample T_tch_pow   #SPLIT149
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --sample TBar_tch_pow  #SPLIT130
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --sample T_tWch  #SPLIT15
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --sample TBar_tWch  #SPLIT16
+
+python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --sigmaJEC 0.5 --flagTT --sample TTSingleLep_pow_CP5 #SPLIT391
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --sigmaJEC 1.5 --flagTT --sample TTSingleLep_pow_CP5 #SPLIT391
+#python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim singlelep-njet2p-met30 --era UL2018 --processingEra TT2lUnbinned_v9 --noTriggerSelection --sigmaJEC 2.0 --flagTT --sample TTSingleLep_pow_CP5 #SPLIT391
 
 #python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim dilep --era UL2018 --processingEra TT2lUnbinned_v7 --flagTT --normalizeSys  --sample TTLep_pow_CP5  #SPLIT155
 #python nanoPostProcessing.py --forceProxy --central --btag_WP loose --skim dilep --era UL2018 --processingEra TT2lUnbinned_v7 --flagTT --normalizeSys  --sigmaJEC 0.5 --sample TTLep_pow_CP5  #SPLIT155

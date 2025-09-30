@@ -54,6 +54,8 @@ if args.small: args.plot_directory += "_small"
 if args.noData:args.plot_directory += "_noData"
 if args.ttbarComp: args.plot_directory += "_ttbarComp"
 
+preselectionString = cutInterpreter.cutString(args.selection) + "&&" + phasespace_v1.inclusive_selection# + "&&("+phasespace.overflow_counter+"==7)"
+
 # Simulated samples
 from TT2lUnbinned.Samples.nano_UL20_RunII_postProcessed import *
 
@@ -69,8 +71,6 @@ else:
     mc = [ TTLep, ST, DY, TTW, TTH, TTZ] 
     #mc = [ TTLep] 
     extra_selection = "1"
-
-preselectionString = cutInterpreter.cutString(args.selection) + "&&" + phasespace_v1.inclusive_selection# + "&&("+phasespace.overflow_counter+"==7)"
 
 # Now we add the data
 if not args.noData:

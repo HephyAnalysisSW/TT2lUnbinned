@@ -39,7 +39,7 @@ argParser.add_argument('--ttbarComp',      action='store_true', help='Run only o
 argParser.add_argument('--noData',         action='store_true', default=True, help='Do not plot data.')
 argParser.add_argument('--no_sorting',     action='store_true', help='Sort histos?', )
 argParser.add_argument('--dataMCScaling',  action='store_true', help='Data MC scaling?')
-argParser.add_argument('--plot_directory', action='store', default='v4')
+argParser.add_argument('--plot_directory', action='store', default='v5')
 argParser.add_argument('--selection',      action='store', default='njet2-btag2')
 argParser.add_argument('--n_cores',        action='store', type=int, default=-1)
 args = argParser.parse_args()
@@ -57,7 +57,8 @@ if args.ttbarComp: args.plot_directory += "_ttbarComp"
 # Simulated samples
 from TT2lUnbinned.Samples.nano_mc_UL20_singlelep_njet2p_met30_postProcessed import *
 
-mc = [ TTSingleLep_pow_CP5_Autumn18, t_sch_Autumn18] 
+#mc = [ TTSingleLep_pow_CP5_Autumn18, t_sch_Autumn18] 
+mc = [ TT, ST_tWch, ST_tch_pow, t_sch] 
 
 #preselectionString = cutInterpreter.cutString(args.selection) + "&&" + phasespace_v1.inclusive_selection# + "&&("+phasespace.overflow_counter+"==7)"
 preselectionString = cutInterpreter.cutString(args.selection) 
@@ -94,62 +95,6 @@ tex = ROOT.TLatex()
 tex.SetNDC()
 tex.SetTextSize(0.04)
 tex.SetTextAlign(11) # align right
-
-# Helper: build 4-vectors (px, py, pz, E) from (pt, eta, phi, mass)
-def p4(pt, eta, phi, mass=0.0):
-    px = pt * cos(phi)
-    py = pt * sin(phi)
-    pz = pt * sinh(eta)
-    E  = sqrt(max(0.0, px*px + py*py + pz*pz + mass*mass))
-    return (px, py, pz, E)
-
-def add_p4(a, b):
-    return (a[0]+b[0], a[1]+b[1], a[2]+b[2], a[3]+b[3])
-
-def mass_of(p):
-    m2 = p[3]*p[3] - (p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
-    return sqrt(max(0.0, m2))
-
-def pt_eta_phi_m(p):
-    px, py, pz, E = p
-    pt  = sqrt(px*px + py*py)
-    eta = 0.5*log((E+pz)/(E-pz)) if E > abs(pz) else float('nan')
-    phi = atan2(py, px)
-    m   = mass_of(p)
-    return pt, eta, phi, m
-
-def boost_to_rest(p, frame):
-    # Boost 4-vector p into the rest frame of 'frame'
-    px, py, pz, E = p
-    fx, fy, fz, FE = frame
-    # beta vector of frame
-    bx, by, bz = (fx/FE, fy/FE, fz/FE) if FE > 0.0 else (0.0, 0.0, 0.0)
-    b2 = bx*bx + by*by + bz*bz
-    if b2 >= 1.0 or FE <= 0.0:
-        # pathological; return original
-        return p
-    gamma = 1.0 / sqrt(1.0 - b2)
-    bp = bx*px + by*py + bz*pz  # beta dot p
-    # p' = p + [ (gamma-1)*(beta dot p)/beta^2 - gamma*E ] * beta
-    k = (gamma - 1.0) * (bp / b2) - gamma * E
-    pxp = px + k * bx
-    pyp = py + k * by
-    pzp = pz + k * bz
-    Ep  = gamma * (E - bp)
-    return (pxp, pyp, pzp, Ep)
-
-def p3_mag(p):
-    return sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
-
-def p_from_ptetaphi(pt, eta, phi):
-    px = pt * cos(phi)
-    py = pt * sin(phi)
-    pz = pt * sinh(eta)
-    return (px, py, pz)
-
-def legendre_P3(x):
-    # P3(x) = (5 x^3 - 3 x) / 2
-    return 0.5 * (5.0*x*x*x - 3.0*x)
 
 
 def drawObjects( dataMCScale, lumi_scale ):
@@ -199,6 +144,12 @@ read_variables += [
     "Electron[pt/F,eta/F,phi/F,dxy/F,dz/F,ip3d/F,sip3d/F,jetRelIso/F,miniPFRelIso_all/F,pfRelIso03_all/F,mvaTTH/F,pdgId/I,vidNestedWPBitmap/I]",
 ]
 
+read_variables +=  ["top_pt/F", "top_eta/F", "top_phi/F", "top_m/F", "top_other_pt/F", "top_other_eta/F", "top_other_phi/F", "top_other_m/F", "top_b_index/I" ,
+        "W_pt/F", "W_eta/F", "W_phi/F", "W_m/F", "nu_pt/F", "nu_eta/F", "nu_phi/F", "nu_m/F",
+        "mT/F", "mlb0/F", "mlb1/F", "pT_bb/F", "cosTheta_lb_topRF/F", "FW3/F", "FW0/F", "FW3_R/F",
+        "DEta_l_b0/F", "DEta_l_b1/F", "DEta_top_b0/F", "DEta_top_b1/F", "Cos_DPhi_top_b0/F", "Cos_DPhi_top_b1/F", "cos_DPhi_l_met/F",
+        ]
+
 # the following we read only in simulation
 read_variables_MC = [
     'reweightBTagSF_central/F', 'reweightPU/F', 'reweightL1Prefire/F', 'reweightLeptonSF/F', 'reweightLeptonSFDown/F', 'reweightLeptonSFUp/F', 'reweightTopPt/F',
@@ -214,308 +165,6 @@ from TT2lUnbinned.Tools.helpers import getObjDict
 def make_reco(event, sample):
     event.jets  = [getObjDict(event, 'JetGood_', jetVarNames, i) for i in range(int(event.nJetGood))]
     event.bJets = list(filter(lambda j: isBJet(j, year=event.year) and abs(j['eta']) <= 2.4, event.jets))
-
-    if len( event.bJets )>=1:
-        event.mlb0 = sqrt(2*event.bJets[0]['pt']*event.l1_pt*(cosh(event.bJets[0]['eta']-event.l1_eta)-cos(event.bJets[0]['phi']-event.l1_phi)))
-    else:
-        event.mlb0 = float('nan')
-    # pT_bb (px, py add in quadrature)
-    if len(event.bJets) >= 2:
-        px_sum = event.bJets[0]['pt']*cos(event.bJets[0]['phi']) + event.bJets[1]['pt']*cos(event.bJets[1]['phi'])
-        py_sum = event.bJets[0]['pt']*sin(event.bJets[0]['phi']) + event.bJets[1]['pt']*sin(event.bJets[1]['phi'])
-        event.pT_bb = sqrt(px_sum**2 + py_sum**2)
-        event.mlb1 = sqrt(2*event.bJets[1]['pt']*event.l1_pt*(cosh(event.bJets[1]['eta']-event.l1_eta)-cos(event.bJets[1]['phi']-event.l1_phi)))
-    else:
-        event.pT_bb = float('nan')
-        event.mlb1  = float('nan')
-
-    # Angles & transverse mass
-    dphi = event.l1_phi - event.met_phi
-    event.cos_dPhi = cos(dphi)
-    sin2_phi = max(0.0, 1.0 - event.cos_dPhi**2)  # = sin^2(phi), robust to tiny negatives
-    event.mT = sqrt(2.0 * event.l1_pt * event.met_pt * (1.0 - event.cos_dPhi))
-
-    # Constants & shorthands
-    mW = 80.4
-    mW2 = mW*mW
-    pTl = event.l1_pt
-    met = event.met_pt
-    eta = event.l1_eta
-
-    # Massless lepton: pz_l = pTl*sinh(eta), E_l = pTl*cosh(eta)
-    pzl = pTl * sinh(eta)
-    El  = pTl * cosh(eta)
-
-    # Lambda with measured MET direction & magnitude
-    # (this is the "original" setup where pT,nu = MET when the discriminant is >= 0)
-    Lambda = 0.5*mW2 + pTl*met*event.cos_dPhi
-
-    # Quadratic in pz_nu:  pz_nu = (Lambda*pzl +/- El * sqrt(Lambda^2 - pTl^2 * met^2)) / pTl^2
-    # -> Discriminant:
-    disc = Lambda*Lambda - (pTl*pTl) * (met*met)
-
-    if disc >= 0.0:
-        # Two real solutions: pick the one with the smaller |pz|
-        A    = (Lambda * pzl) / (pTl*pTl)
-        root = (El / (pTl*pTl)) * sqrt(disc)
-        pz_nu_1 = A + root
-        pz_nu_2 = A - root
-
-        event.pT_nu = met          # keep measured MET when solutions are real
-        event.pz_nu = pz_nu_1 if abs(pz_nu_1) < abs(pz_nu_2) else pz_nu_2
-
-    else:
-        # Complex: enforce reality by Delta=0 and choose the neutrino pT on the boundary
-        # If we keep the nu direction fixed to the MET direction, the boundary gives a scalar quadratic in rho = |pT,nu|:
-        # Handle small sin phi separately to avoid division by ~0.
-        eps = 1e-6  # threshold on sin^2 phi
-
-        if sin2_phi < eps:
-            # Collinear / anti-collinear limit: linear solution
-            # rho = - mW^2 / (4 pTl cos phi)
-            # Only meaningful when cos phi approx +/-1; here we are already in the Delta<0 branch so phi ~ pi is the typical case.
-            if abs(event.cos_dPhi) < 1e-12:
-                # extremely degenerate: fall back to using MET magnitude as a harmless default
-                rho = met
-            else:
-                rho = - mW2 / (4.0 * pTl * event.cos_dPhi)
-
-            # If numerical noise produces negative rho, clamp to zero (non-physical otherwise)
-            if rho < 0.0:
-                rho = 0.0
-
-            event.pT_nu = rho
-            Lambda_star = 0.5*mW2 + pTl * rho * event.cos_dPhi
-            event.pz_nu = (Lambda_star * pzl) / (pTl*pTl)
-
-        else:
-            # Generic quadratic: two roots for rho
-            # rho +/-  = [ (mW^2/2) (cos phi +/- 1) ] / [ pTl sin^2 phi ]
-            denom = pTl * sin2_phi
-            rho1 = (0.5*mW2 * (event.cos_dPhi + 1.0)) / denom
-            rho2 = (0.5*mW2 * (event.cos_dPhi - 1.0)) / denom
-
-            # Choose rho closest to measured MET magnitude
-            rho = rho1 if abs(met - rho1) < abs(met - rho2) else rho2
-            if rho < 0.0:  # guard against tiny negative due to rounding
-                rho = 0.0
-
-            event.pT_nu = rho
-            Lambda_star = 0.5*mW2 + pTl * rho * event.cos_dPhi
-            event.pz_nu = (Lambda_star * pzl) / (pTl*pTl)
-
-    # Lepton 4-vector
-    p4_l = p4(event.l1_pt, event.l1_eta, event.l1_phi, 0.0)
-
-    # Neutrino 4-vector
-    px_nu = event.pT_nu * cos(event.met_phi)
-    py_nu = event.pT_nu * sin(event.met_phi)
-    pz_nu = event.pz_nu
-    E_nu  = sqrt(max(0.0, event.pT_nu*event.pT_nu + pz_nu*pz_nu))
-    p4_nu = (px_nu, py_nu, pz_nu, E_nu)
-
-    # W boson
-    p4_W = add_p4(p4_l, p4_nu)
-
-    # Store neutrino kinematics
-    nu_pt, nu_eta, nu_phi, nu_m = pt_eta_phi_m(p4_nu)
-    event.nu_pt  = nu_pt
-    event.nu_eta = nu_eta
-    event.nu_phi = nu_phi
-    # massless
-    event.nu_m   = 0.0
-
-    # Store W kinematics
-    W_pt, W_eta, W_phi, W_m = pt_eta_phi_m(p4_W)
-    event.W_pt  = W_pt
-    event.W_eta = W_eta
-    event.W_phi = W_phi
-    event.W_m   = W_m
-
-    # --- Top reconstruction with two b-tagged jets (2j2t or 3j2t) ---
-    # Use the SAME b-jet counting as for pT_bb: event.bJets already filtered with |eta|<=2.4
-
-    if len(event.bJets) >= 1:
-
-        # b-jet 4-vector
-        b0 = event.bJets[0]
-        m_b0 = b0.get('mass', 0.0)
-        p4_b0 = p4(b0['pt'], b0['eta'], b0['phi'], m_b0)
-
-        # Top candidate
-        p4_t0 = add_p4(p4_W, p4_b0)
-        m_t0 = mass_of(p4_t0)
-
-        event.top_b_index = 0
-        event.mtop        = m_t0
-        event.mtop_other  = float('nan')
-        event.mtop_diff   = abs(m_t0 - 172.5)
-
-        # Store chosen top candidate
-        top_pt, top_eta, top_phi, top_m = pt_eta_phi_m(p4_t0)
-        event.top_pt  = top_pt
-        event.top_eta = top_eta
-        event.top_phi = top_phi
-        event.top_m   = top_m
-
-        # No "other" top
-        event.top_other_pt  = float('nan')
-        event.top_other_eta = float('nan')
-        event.top_other_phi = float('nan')
-        event.top_other_m   = float('nan')
-
-    if len(event.bJets) >= 2:
-
-        # Build top candidates with each of the two b jets
-        # (In 2j2t / 3j2t categories there should be exactly two b-tagged jets.)
-        b0 = event.bJets[0]
-        b1 = event.bJets[1]
-
-        # If your jets include a 'mass' field, use it; otherwise treat as massless
-        m_b0 = b0.get('mass', 0.0)
-        m_b1 = b1.get('mass', 0.0)
-
-        p4_b0 = p4(b0['pt'], b0['eta'], b0['phi'], m_b0)
-        p4_b1 = p4(b1['pt'], b1['eta'], b1['phi'], m_b1)
-
-        p4_t0 = add_p4(p4_W, p4_b0)
-        p4_t1 = add_p4(p4_W, p4_b1)
-
-        m_t0 = mass_of(p4_t0)
-        m_t1 = mass_of(p4_t1)
-
-        # Choose the b jet whose top mass is closer to the nominal 172.5 GeV
-        mtop_nominal = 172.5
-        if abs(m_t0 - mtop_nominal) <= abs(m_t1 - mtop_nominal):
-            event.top_b_index = 0
-            event.mtop        = m_t0
-            event.mtop_other  = m_t1
-        else:
-            event.top_b_index = 1
-            event.mtop        = m_t1
-            event.mtop_other  = m_t0
-
-        event.mtop_diff = abs(event.mtop - mtop_nominal)
-
-        # Top candidate with chosen b
-        if event.top_b_index == 0:
-            p4_top      = p4_t0
-            p4_top_other= p4_t1
-        else:
-            p4_top      = p4_t1
-            p4_top_other= p4_t0
-
-        # Store chosen top
-        top_pt, top_eta, top_phi, top_m = pt_eta_phi_m(p4_top)
-        event.top_pt  = top_pt
-        event.top_eta = top_eta
-        event.top_phi = top_phi
-        event.top_m   = top_m
-
-        # Store "other" top
-        o_pt, o_eta, o_phi, o_m = pt_eta_phi_m(p4_top_other)
-        event.top_other_pt  = o_pt
-        event.top_other_eta = o_eta
-        event.top_other_phi = o_phi
-        event.top_other_m   = o_m
-
-    if len(event.bJets) == 0:
-        # Not enough b-tagged jets to do this selection
-        event.top_b_index = -1
-        event.mtop        = float('nan')
-        event.mtop_other  = float('nan')
-        event.mtop_diff   = float('nan')
-        event.top_pt        = float('nan')
-        event.top_eta       = float('nan')
-        event.top_phi       = float('nan')
-        event.top_m         = float('nan')
-        event.top_other_pt  = float('nan')
-        event.top_other_eta = float('nan')
-        event.top_other_phi = float('nan')
-        event.top_other_m   = float('nan')
-
-    # -------------------------------------------------
-    # a) cos(theta) between lepton and spectator b jet
-    #     in the top-quark rest frame
-    # -------------------------------------------------
-    # Identify spectator b: the other b-jet than the one used for top
-    if len(event.bJets) >= 2 and event.top_b_index in (0, 1):
-        b_spec = event.bJets[1 - event.top_b_index]
-        m_bspec = b_spec.get('mass', 0.0)
-        p4_bspec = p4(b_spec['pt'], b_spec['eta'], b_spec['phi'], m_bspec)
-
-        # Boost lepton and spectator b into top rest frame
-        p4_l_topRF     = boost_to_rest(p4_l, p4_top)
-        p4_bspec_topRF = boost_to_rest(p4_bspec, p4_top)
-
-        pl = (p4_l_topRF[0], p4_l_topRF[1], p4_l_topRF[2])
-        pb = (p4_bspec_topRF[0], p4_bspec_topRF[1], p4_bspec_topRF[2])
-        ml = p3_mag(p4_l_topRF)
-        mb = p3_mag(p4_bspec_topRF)
-
-        if ml > 0.0 and mb > 0.0:
-            cos_theta = (pl[0]*pb[0] + pl[1]*pb[1] + pl[2]*pb[2]) / (ml * mb)
-            # Numerical safety
-            if cos_theta > 1.0:  cos_theta = 1.0
-            if cos_theta < -1.0: cos_theta = -1.0
-            event.cosTheta_lb_topRF = cos_theta
-        else:
-            event.cosTheta_lb_topRF = float('nan')
-    else:
-        # Not enough b-jets or no chosen index
-        event.cosTheta_lb_topRF = float('nan')
-
-    # -------------------------------------------------
-    # b) Fox-Wolfram third moment (and normalized)
-    #     Build from all selected jets + lepton + neutrino
-    # -------------------------------------------------
-    # Collect 3-momenta (px,py,pz) and magnitudes
-    p_list = []
-
-    # jets
-    for j in event.jets:
-        px = j['pt'] * cos(j['phi'])
-        py = j['pt'] * sin(j['phi'])
-        pz = j['pt'] * sinh(j['eta'])
-        p_list.append((px, py, pz))
-
-    # lepton (massless)
-    p_list.append(p_from_ptetaphi(event.l1_pt, event.l1_eta, event.l1_phi))
-
-    # neutrino (use reconstructed pT and pz, phi from MET; eta is not needed)
-    px_nu = event.pT_nu * cos(event.met_phi)
-    py_nu = event.pT_nu * sin(event.met_phi)
-    pz_nu = event.pz_nu
-    p_list.append((px_nu, py_nu, pz_nu))
-
-    # Compute H0 and H3
-    H0 = 0.0
-    H3 = 0.0
-    # Precompute magnitudes
-    mags = [sqrt(px*px + py*py + pz*pz) for (px,py,pz) in p_list]
-
-    n = len(p_list)
-    for i in range(n):
-        pi = p_list[i]
-        mi = mags[i]
-        if mi == 0.0:
-            continue
-        for j in range(n):
-            pj = p_list[j]
-            mj = mags[j]
-            if mj == 0.0:
-                continue
-            # cos(theta_ij)
-            cij = (pi[0]*pj[0] + pi[1]*pj[1] + pi[2]*pj[2]) / (mi * mj)
-            # numerical clamp
-            if cij > 1.0:  cij = 1.0
-            if cij < -1.0: cij = -1.0
-            H0 += mi * mj
-            H3 += mi * mj * legendre_P3(cij)
-
-    event.FW3   = H3
-    event.FW0   = H0
-    event.FW3_R = (H3 / H0) if H0 > 0.0 else float('nan')
 
 sequence.append( make_reco )
 
@@ -720,38 +369,45 @@ for i_mode, mode in enumerate(allModes):
       binning=[600/30,0,600],
     ))
 
+
     plots.append(Plot(
       texX = '#Delta#eta(l,b_0)', texY = 'Number of Events / 30 GeV',
-      name = 'DEta_lb0', attribute = lambda event, sample: abs(event.bJets[0]['eta']-event.l1_eta) if len(event.bJets)>=1 else float('nan'),
+      name = 'DEta_lb0', attribute = lambda event, sample: event.DEta_l_b0,
       binning=[30,0,6],
     ))
     plots.append(Plot(
       texX = '#Delta#eta(l,b_1)', texY = 'Number of Events / 30 GeV',
-      name = 'DEta_lb1', attribute = lambda event, sample: abs(event.bJets[1]['eta']-event.l1_eta) if len(event.bJets)>=2 else float('nan'),
+      name = 'DEta_lb1', attribute = lambda event, sample: event.DEta_l_b1,
       binning=[30,0,6],
     ))
 
     plots.append(Plot(
       texX = '#Delta#eta(top,b_0)', texY = 'Number of Events / 30 GeV',
-      name = 'DEta_top_b0', attribute = lambda event, sample: abs(event.bJets[0]['eta']-event.top_eta) if len(event.bJets)>=1 else float('nan'),
+      name = 'DEta_top_b0', attribute = lambda event, sample: event.DEta_top_b0,
       binning=[30,0,6],
     ))
 
     plots.append(Plot(
       texX = '#Delta#eta(top,b_1)', texY = 'Number of Events / 30 GeV',
-      name = 'DEta_top_b1', attribute = lambda event, sample: abs(event.bJets[1]['eta']-event.top_eta) if len(event.bJets)>=2 else float('nan'),
+      name = 'DEta_top_b1', attribute = lambda event, sample: event.DEta_top_b1,
       binning=[30,0,6],
     ))
 
     plots.append(Plot(
       texX = 'Cos(#Delta#phi(top,b_0))', texY = 'Number of Events / 30 GeV',
-      name = 'Cos_DPhi_top_b0', attribute = lambda event, sample: cos(event.bJets[0]['phi']-event.top_phi) if len(event.bJets)>=1 else float('nan'),
+      name = 'Cos_DPhi_top_b0', attribute = lambda event, sample: event.Cos_DPhi_top_b0,
+      binning=[30,-1,1],
+    ))
+
+    plots.append(Plot(
+      texX = 'Cos(#Delta#phi(l,MET))', texY = 'Number of Events / 30 GeV',
+      name = 'cos_DPhi_l_met', attribute = lambda event, sample: event.cos_DPhi_l_met,
       binning=[30,-1,1],
     ))
 
     plots.append(Plot(
       texX = 'Cos(#Delta#phi(top,b_1))', texY = 'Number of Events / 30 GeV',
-      name = 'Cos_DPhi_top_b1', attribute = lambda event, sample: cos(event.bJets[1]['phi']-event.top_phi) if len(event.bJets)>=2 else float('nan'),
+      name = 'Cos_DPhi_top_b1', attribute = lambda event, sample: event.Cos_DPhi_top_b1,
       binning=[30,-1,1],
     ))
 
@@ -839,7 +495,6 @@ for i_mode, mode in enumerate(allModes):
       binning=[600/30,0,600],
     ))
 
-
     plots.append(Plot(
       texX = 'cos(#theta^#ast)', texY = 'Number of Events',
       name = 'cosTheta_lb_topRF', attribute = lambda event, sample: event.cosTheta_lb_topRF,
@@ -863,6 +518,7 @@ for i_mode, mode in enumerate(allModes):
       name = 'mlb1', attribute = lambda event, sample: event.mlb1,
       binning=[600/30,0,600],
     ))
+
 
     plotting.fill(plots, read_variables = read_variables, sequence = sequence, ttreeFormulas = ttreeFormulas)
 
