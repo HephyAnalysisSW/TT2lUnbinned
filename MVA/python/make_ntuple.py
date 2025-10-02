@@ -3,6 +3,7 @@
 # General
 import os, sys
 import ROOT
+import shutil
 
 # Analysis
 #import Analysis.Tools.syncer
@@ -10,7 +11,7 @@ import ROOT
 from RootTools.core.standard import *
 
 from TT2lUnbinned.Tools.helpers import getVarValue, getObjDict
-
+import TT2lUnbinned.Tools.user as user
 # MVA configuration
 import TT2lUnbinned.MVA.configs  as configs
 
@@ -81,13 +82,34 @@ output_file  = os.path.join( args.output_directory, "MVA-training", subDir, samp
 if os.path.exists( output_file ) and not args.overwrite:
     print( "File %s exists. Quit."%output_file)
     sys.exit(0)
+dirname = os.path.dirname(output_file)
+if not os.path.exists(dirname):
+    os.makedirs(dirname)
 
+tmp_file  = os.path.join( user.postprocessing_tmp_directory, "MVA-training", subDir, sample.name, sample.name + ".root" )
+tmp_dirname = os.path.dirname(tmp_file)
+if not os.path.exists(tmp_dirname):
+    os.makedirs(tmp_dirname)
+
+if os.path.exists( tmp_file ):
+    os.remove( tmp_file )
+ 
+# Create a maker. Maker class will be compiled.
+
+tmp_dir     = ROOT.gDirectory
+
+#outputfile = ROOT.TFile.Open(output_file, 'recreate')
+outputfile = ROOT.TFile.Open(tmp_file, 'recreate')
+
+tmp_dir.cd()
 # reader
 reader = sample.treeReader( \
     variables = config.read_variables + (sample.read_variables if hasattr(sample, "read_variables") else []),
     sequence  = config.sequence,
     )
 reader.start()
+
+outputfile.cd()
 
 def fill_vector_collection( event, collection_name, collection_varnames, objects, maxN = 100):
     setattr( event, "n"+collection_name, len(objects) )
@@ -141,16 +163,6 @@ def filler( event ):
         for name_ in sample.extra_variables:
             name = name_.split('/')[0]
             setattr( event, name, getattr(r, name) )
-    
-# Create a maker. Maker class will be compiled.
-
-tmp_dir     = ROOT.gDirectory
-
-dirname = os.path.dirname(output_file)
-if not os.path.exists(dirname):
-    os.makedirs(dirname)
-
-outputfile = ROOT.TFile.Open(output_file, 'recreate')
 
 outputfile.cd()
 maker = TreeMaker(
@@ -184,3 +196,8 @@ logger.info( "Written %s", output_file)
 maker.clear()
 
 logger.info( "Written %i events to %s",  nEventsTotal, output_file )
+
+shutil.copy(tmp_file, output_file)
+logger.info( "Done copying to %s -> %s", tmp_file, output_file)
+
+os.remove( tmp_file )

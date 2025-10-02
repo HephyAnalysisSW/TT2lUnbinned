@@ -56,7 +56,6 @@ ST_tWch_Summer16_preVFP            = Sample.combine( "ST_tWch_Summer16_preVFP", 
 ST_tch_pow_Summer16_preVFP         = Sample.combine( "ST_tch_Summer16_preVFP", [TBar_tch_pow_Summer16_preVFP, T_tch_pow_Summer16_preVFP], texName = "t/#bar{t} t-chan. (16, pre)")
 TT_Summer16_preVFP                 = Sample.combine( "TT_Summer16_preVFP", [TTSingleLep_pow_CP5_Summer16_preVFP, TTLep_pow_CP5_Summer16_preVFP], texName = "t#bar{t} (16, pre)")
 
-
 TBar_tWch_Summer16           = Sample.fromDirectory(name="TBar_tWch_Summer16",          color=color.tW , texName="#bar{t}W (16)"       , directory=make_dirs( ['UL2016', subdir_,"TBar_tWch"] ))
 TBar_tch_pow_Summer16        = Sample.fromDirectory(name="TBar_tch_pow_Summer16",       color=color.tCh, texName="#bar{t} t-chan (16)" , directory=make_dirs( ['UL2016', subdir_,"TBar_tch_pow"] ))
 TTLep_pow_CP5_Summer16       = Sample.fromDirectory(name="TTLep_pow_CP5_Summer16",      color=color.TT , texName="t#bar{t} (2l, 16)"   , directory=make_dirs( ['UL2016', subdir_,"TTLep_pow_CP5"] ))
@@ -67,7 +66,6 @@ t_sch_Summer16               = Sample.fromDirectory(name="t_sch_Summer16",      
 ST_tWch_Summer16             = Sample.combine( "ST_tWch_Summer16", [TBar_tWch_Summer16, T_tWch_Summer16], texName = "t/#bar{t}+W (16)")
 ST_tch_pow_Summer16          = Sample.combine( "ST_tch_Summer16", [TBar_tch_pow_Summer16, T_tch_pow_Summer16], texName = "t/#bar{t} t-chan. (16)")
 TT_Summer16                  = Sample.combine( "TT_Summer16", [TTSingleLep_pow_CP5_Summer16, TTLep_pow_CP5_Summer16], texName = "t#bar{t} (16)")
-
 
 TBar_tWch_Fall17             = Sample.fromDirectory(name="TBar_tWch_Fall17",            color=color.tW , texName="#bar{t}W (17)"       , directory=make_dirs( ['UL2017', subdir_,"TBar_tWch"] ))
 TBar_tch_pow_Fall17          = Sample.fromDirectory(name="TBar_tch_pow_Fall17",         color=color.tCh, texName="#bar{t} t-chan (17)" , directory=make_dirs( ['UL2017', subdir_,"TBar_tch_pow"] ))
@@ -91,7 +89,6 @@ ST_tWch_Autumn18             = Sample.combine( "ST_tWch_Autumn18", [TBar_tWch_Au
 ST_tch_pow_Autumn18          = Sample.combine( "ST_tch_Autumn18", [TBar_tch_pow_Autumn18, T_tch_pow_Autumn18], texName = "t/#bar{t} t-chan. (18)")
 TT_Autumn18                  = Sample.combine( "TT_Autumn18", [TTSingleLep_pow_CP5_Autumn18, TTLep_pow_CP5_Autumn18], texName = "t#bar{t} (18)")
 
-
 TBar_tWch           = Sample.combine( "TBar_tWch", [TBar_tWch_Summer16_preVFP, TBar_tWch_Summer16, TBar_tWch_Fall17, TBar_tWch_Autumn18], texName="#bar{t}W")
 TBar_tch_pow        = Sample.combine( "TBar_tch_pow", [TBar_tch_pow_Summer16_preVFP, TBar_tch_pow_Summer16, TBar_tch_pow_Fall17, TBar_tch_pow_Autumn18], texName="#bar{t} t-chan")
 TTLep_pow_CP5       = Sample.combine( "TTLep_pow_CP5", [TTLep_pow_CP5_Summer16_preVFP, TTLep_pow_CP5_Summer16, TTLep_pow_CP5_Fall17, TTLep_pow_CP5_Autumn18], texName="t#bar{t} (2l)")
@@ -102,4 +99,3 @@ t_sch               = Sample.combine( "t_sch", [t_sch_Summer16_preVFP, t_sch_Sum
 ST_tWch             = Sample.combine( "ST_tWch", [ST_tWch_Summer16_preVFP, ST_tWch_Summer16, ST_tWch_Fall17, ST_tWch_Autumn18], texName="t/#bar{t}+W")
 ST_tch_pow          = Sample.combine( "ST_tch_pow", [ST_tch_pow_Summer16_preVFP, ST_tch_pow_Summer16, ST_tch_pow_Fall17, ST_tch_pow_Autumn18], texName="t/#bar{t} t-chan.")
 TT                  = Sample.combine( "TT", [TT_Summer16_preVFP, TT_Summer16, TT_Fall17, TT_Autumn18], texName="t#bar{t}")
-

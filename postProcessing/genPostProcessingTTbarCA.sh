@@ -1,6 +1,6 @@
 python genPostProcessingTTbarCA.py --addEFTWeights --addGenWeights --genTTbar --sample TT01j2lCAOldRef_Mtt500_ext #SPLIT3000 
 
-#python genPostProcessingTTbarCA.py --addGenWeights --miniAOD --sample TTLep_pow #SPLIT2000
+python genPostProcessingTTbarCA.py --addGenWeights --miniAOD --sample TTLep_pow #SPLIT2000
 #
 #python genPostProcessingTTbarCA.py --addGenWeights --miniAOD --genTTbar --sample TTLep_hdampDOWN #SPLIT800
 #python genPostProcessingTTbarCA.py --addGenWeights --miniAOD --genTTbar --sample TTLep_hdampUP #SPLIT800
