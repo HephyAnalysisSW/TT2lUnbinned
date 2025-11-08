@@ -1,0 +1,9 @@
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_nominal
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_0p5_jesTotalUp
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_0p5_jesTotalDown
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_1p0_jesTotalUp
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_1p0_jesTotalDown
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_1p5_jesTotalUp
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_1p5_jesTotalDown
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_2p0_jesTotalUp
+python make_ntuple.py --output /scratch-cbe/users/robert.schoefbeck/TT2lUnbinned/training-ntuples-v8-jec --config JEC_for_PDF --sample  TTLep_2p0_jesTotalDown

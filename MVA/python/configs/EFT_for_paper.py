@@ -76,15 +76,6 @@ read_variables = [\
     "tr_xi_r_star_k/F", "tr_xi_k_r_star/F", "tr_xi_kk_star/F",
     "tr_cos_phi/F", "tr_cos_phi_lab/F", "tr_abs_delta_phi_ll_lab/F",
 
-    "Generator_scalePDF/F",
-    "Generator_weight/F",
-    "Generator_x1/F",
-    "Generator_x2/F",
-    "Generator_xpdf1/F",
-    "Generator_xpdf2/F",
-    "Generator_id1/I",
-    "Generator_id2/I",
-
     "reweightTopPt/F",
     "reweightPU/F",
     "reweightPUUp/F",
@@ -98,11 +89,6 @@ read_variables = [\
     "reweightTrigger/F",
     "reweightTriggerUp/F",
     "reweightTriggerDown/F",
-    "reweightBTagSF1a_SF/F",
-    "reweightBTagSF1a_SF_b_Down/F",
-    "reweightBTagSF1a_SF_b_Up/F",
-    "reweightBTagSF1a_SF_l_Down/F",
-    "reweightBTagSF1a_SF_l_Up/F",
     "reweightLeptonTrackingSF/F",
     #"reweightBTagSF_down_hf/F",
     #"reweightBTagSF_central/F",
@@ -123,6 +109,11 @@ read_variables = [\
     #"reweightBTagSF_down_hfstats2/F",
     #"reweightBTagSF_down_hfstats1/F",
     #"reweightBTagSF_down_jes/F",
+    "reweightBTagSF1a_SF/F",
+    "reweightBTagSF1a_SF_b_Down/F",
+    "reweightBTagSF1a_SF_b_Up/F",
+    "reweightBTagSF1a_SF_l_Down/F",
+    "reweightBTagSF1a_SF_l_Up/F",
     ]
 # sequence
 sequence = []
@@ -183,15 +174,6 @@ all_mva_variables = {
      "recoLep_dAbsEta"       :(lambda event, sample: (abs(event.l1_eta) if event.l1_pdgId<0 else abs(event.l2_eta)) - (abs(event.l1_eta) if event.l1_pdgId>0 else abs(event.l2_eta))),
      "nBTag"                 :(lambda event, sample: event.nBTagJetM),
      "nrecoJet"              :(lambda event, sample: event.nJetGood),
-     "scale_ren0p5_fac0p5"   :(lambda event, sample: event.scale_Weight[0]),
-     "scale_ren0p5_fac1p0"   :(lambda event, sample: event.scale_Weight[1]),
-     "scale_ren0p5_fac2p0"   :(lambda event, sample: event.scale_Weight[2]),
-     "scale_ren1p0_fac0p5"   :(lambda event, sample: event.scale_Weight[3]),
-     "scale_ren1p0_fac1p0"   :(lambda event, sample: event.scale_Weight[4]),
-     "scale_ren1p0_fac2p0"   :(lambda event, sample: event.scale_Weight[5]),
-     "scale_ren2p0_fac0p5"   :(lambda event, sample: event.scale_Weight[6]),
-     "scale_ren2p0_fac1p0"   :(lambda event, sample: event.scale_Weight[7]),
-     "scale_ren2p0_fac2p0"   :(lambda event, sample: event.scale_Weight[8]),
 }
 
 for var in [
@@ -228,19 +210,30 @@ for var in [
     "reweightTriggerUp",
     "reweightTriggerDown",
     "reweightLeptonTrackingSF",
+    #"reweightBTagSF_down_hf",
+    #"reweightBTagSF_central",
+    #"reweightBTagSF_up_cferr1",
+    #"reweightBTagSF_up_jes",
+    #"reweightBTagSF_down_cferr2",
+    #"reweightBTagSF_up_lf",
+    #"reweightBTagSF_down_lf",
+    #"reweightBTagSF_down_cferr1",
+    #"reweightBTagSF_up_lfstats2",
+    #"reweightBTagSF_up_lfstats1",
+    #"reweightBTagSF_up_cferr2",
+    #"reweightBTagSF_up_hfstats1",
+    #"reweightBTagSF_up_hfstats2",
+    #"reweightBTagSF_down_lfstats2",
+    #"reweightBTagSF_up_hf",
+    #"reweightBTagSF_down_lfstats1",
+    #"reweightBTagSF_down_hfstats2",
+    #"reweightBTagSF_down_hfstats1",
+    #"reweightBTagSF_down_jes",
     "reweightBTagSF1a_SF",
     "reweightBTagSF1a_SF_b_Down",
     "reweightBTagSF1a_SF_b_Up",
     "reweightBTagSF1a_SF_l_Down",
     "reweightBTagSF1a_SF_l_Up",
-    "Generator_scalePDF",
-    "Generator_weight",
-    "Generator_x1",
-    "Generator_x2",
-    "Generator_xpdf1",
-    "Generator_xpdf2",
-    "Generator_id1",
-    "Generator_id2",
 
 ]:
     all_mva_variables[var] = (lambda event, sample, var=var: getattr( event, var ))
@@ -260,7 +253,7 @@ def scale_Weight(event, sample):
 mva_vector_variables    =   {
     #"PDF":  {"name":"PDF", "vars":["Weight/F"], "varnames":["Weight"], "func": (lambda event, sample: [{'Weight':event.PDF_Weight[i]} for i in range(int(event.nPDF))]), 'maxN':103}
     "PDF":  {"name":"PDF", "vars":["Weight/F"], "varnames":["Weight"], "func": PDF_Weight, 'maxN':103},
-    #"scale": {"name":"scale", "vars":["Weight/F"], "varnames":["Weight"], "func": scale_Weight, 'maxN':9}
+    "scale": {"name":"scale", "vars":["Weight/F"], "varnames":["Weight"], "func": scale_Weight, 'maxN':9}
 }
 
 
@@ -324,6 +317,6 @@ assert len(training_samples)==len(set([s.name for s in training_samples])), "tra
 # training selection
 
 #selection = 'tr-minDLmass20-dilepM-offZ1-njet2p-mtt750'
-selection = 'tr-minDLmass20-dilepM-offZ1-njet3p-btagM2p'
+selection = 'tr-minDLmass20-dilepM-offZ1-njet3p-btagM2p-mtt750'
 from TT2lUnbinned.Tools.cutInterpreter import cutInterpreter
 selectionString = cutInterpreter.cutString( selection )
